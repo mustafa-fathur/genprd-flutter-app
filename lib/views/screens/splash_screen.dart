@@ -14,10 +14,12 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Navigate to onboarding screen after 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        );
+      }
     });
   }
 
@@ -33,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withAlpha((0.1 * 255).toInt()),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(

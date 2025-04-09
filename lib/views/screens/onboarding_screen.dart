@@ -12,23 +12,23 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
-  final List<OnboardingItem> _items = [
-    OnboardingItem(
-      icon: Icons.description,
-      title: 'Create Professional PRDs',
-      description: 'Generate comprehensive Product Requirement Documents with AI assistance',
-    ),
-    OnboardingItem(
-      icon: Icons.auto_awesome,
-      title: 'AI-Powered Generation',
-      description: 'Let AI help you draft, refine, and format your product requirement documents',
-    ),
-    OnboardingItem(
-      icon: Icons.people,
-      title: 'Adjust Productivity',
-      description: 'Adjust your productivity as a project manager by easily creating PRDs and delivery',
-    ),
+  
+  final List<Map<String, dynamic>> _onboardingData = [
+    {
+      'title': 'Create PRDs Easily',
+      'description': 'Create professional Product Requirement Documents with just a few clicks',
+      'icon': Icons.description,
+    },
+    {
+      'title': 'Collaborate with Team',
+      'description': 'Share your PRDs with your team and collaborate in real-time',
+      'icon': Icons.people,
+    },
+    {
+      'title': 'AI-Powered Assistance',
+      'description': 'Get AI-powered suggestions to improve your PRDs',
+      'icon': Icons.smart_toy,
+    },
   ];
 
   @override
@@ -37,19 +37,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _onNextPressed() {
-    if (_currentPage < _items.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      // Navigate to login page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
+  void _navigateToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   @override
@@ -58,124 +50,110 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Skip button
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextButton(
+                  onPressed: _navigateToLogin,
+                  child: const Text('Skip'),
+                ),
+              ),
+            ),
+            
+            // Page view
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _items.length,
-                onPageChanged: (int page) {
+                itemCount: _onboardingData.length,
+                onPageChanged: (index) {
                   setState(() {
-                    _currentPage = page;
+                    _currentPage = index;
                   });
                 },
                 itemBuilder: (context, index) {
-                  return OnboardingPage(item: _items[index]);
+                  return _buildOnboardingPage(
+                    _onboardingData[index]['title'],
+                    _onboardingData[index]['description'],
+                    _onboardingData[index]['icon'],
+                  );
                 },
               ),
             ),
+            
             // Page indicator
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _items.length,
-                  (index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentPage == index
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade300,
-                    ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _onboardingData.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentPage == index
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.shade300,
                   ),
                 ),
               ),
             ),
-            // Next button
+            
+            // Next or Get Started button
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: PrimaryButton(
-                text: _currentPage == _items.length - 1 ? 'Get Started' : 'Next',
-                onPressed: _onNextPressed,
+                text: _currentPage == _onboardingData.length - 1
+                    ? 'Get Started'
+                    : 'Next',
+                onPressed: () {
+                  if (_currentPage == _onboardingData.length - 1) {
+                    _navigateToLogin();
+                  } else {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
               ),
             ),
-            // Skip or Login link
-            if (_currentPage < _items.length - 1)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24.0),
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    );
-                  },
-                  child: Text(
-                    'Already have an account? Sign in',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
     );
   }
-}
 
-class OnboardingItem {
-  final IconData icon;
-  final String title;
-  final String description;
-
-  OnboardingItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-}
-
-class OnboardingPage extends StatelessWidget {
-  final OnboardingItem item;
-
-  const OnboardingPage({super.key, required this.item});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOnboardingPage(String title, String description, IconData icon) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
           Container(
-            width: 100,
-            height: 100,
+            width: 120,
+            height: 120,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(50),
+              color: Theme.of(context).primaryColor.withAlpha(30),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
-              item.icon,
-              size: 50,
+              icon,
+              size: 60,
               color: Theme.of(context).primaryColor,
             ),
           ),
           const SizedBox(height: 40),
-          // Title
           Text(
-            item.title,
+            title,
             style: Theme.of(context).textTheme.displayMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          // Description
           Text(
-            item.description,
+            description,
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),

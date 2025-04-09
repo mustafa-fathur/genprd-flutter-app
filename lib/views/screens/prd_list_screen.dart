@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/views/screens/prd_detail_screen.dart';
+import 'package:genprd/views/screens/prd_form_screen.dart';
+import 'package:genprd/views/shared/loading_widget.dart';
 
 class PrdListScreen extends StatefulWidget {
   const PrdListScreen({super.key});
@@ -12,6 +14,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
   String _selectedFilter = 'All Stage';
   final List<String> _filters = ['All Stage', 'Draft', 'Finished', 'Archived'];
   final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = false;
   
   // Mock data
   final List<Map<String, dynamic>> _prds = [
@@ -49,134 +52,167 @@ class _PrdListScreenState extends State<PrdListScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredPrds {
-    if (_selectedFilter == 'All Stage') {
+    if (_selectedFilter == 'All Stage' && _searchController.text.isEmpty) {
       return _prds;
     }
-    return _prds.where((prd) => prd['stage'] == _selectedFilter).toList();
+    
+    return _prds.where((prd) {
+      final matchesStage = _selectedFilter == 'All Stage' || prd['stage'] == _selectedFilter;
+      final matchesSearch = _searchController.text.isEmpty || 
+                           prd['title'].toLowerCase().contains(_searchController.text.toLowerCase());
+      return matchesStage && matchesSearch;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('PRDs'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              // Profile action
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Product Requirement Documents',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Product Requirement Documents',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 16),
-                // Search field
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              ),
+              const SizedBox(height: 16),
+              // Search field
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(20),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search PRDs...',
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search PRDs...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          _searchController.clear();
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Filter chips
+              SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _filters.length,
+                  itemBuilder: (context, index) {
+                    final filter = _filters[index];
+                    final isSelected = _selectedFilter == filter;
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(filter),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedFilter = selected ? filter : 'All Stage';
+                          });
                         },
+                        backgroundColor: Colors.white,
+                        selectedColor: Theme.of(context).primaryColor.withAlpha(30),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Theme.of(context).primaryColor : Colors.black,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 16),
-                // Filter dropdown
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedFilter,
-                      isExpanded: true,
-                      icon: const Icon(Icons.arrow_drop_down),
-                      elevation: 16,
-                      style: const TextStyle(color: Colors.black),
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedFilter = value!;
-                        });
-                      },
-                      items: _filters.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+              ),
+            ],
+          ),
+        ),
+        
+        // PRD list
+        Expanded(
+          child: _isLoading
+              ? const LoadingWidget()
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      _isLoading = true;
+                    });
+                    
+                    // Simulate API call
+                    await Future.delayed(const Duration(seconds: 1));
+                    
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  },
+                  child: _filteredPrds.isEmpty
+                      ? const Center(
+                          child: Text('No PRDs found'),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredPrds.length,
+                          itemBuilder: (context, index) {
+                            final prd = _filteredPrds[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: _buildPrdItem(
+                                context,
+                                prd['title'],
+                                'Updated: ${prd['updated']}',
+                                prd['stage'],
+                              ),
+                            );
+                          },
+                        ),
                 ),
-              ],
-            ),
+        ),
+        
+        // FAB for creating new PRD
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PrdFormScreen()),
+              );
+            },
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.add, color: Colors.white),
           ),
-          
-          // PRD list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _filteredPrds.length,
-              itemBuilder: (context, index) {
-                final prd = _filteredPrds[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _buildPrdItem(
-                    context,
-                    prd['title'],
-                    'Updated: ${prd['updated']}',
-                    prd['stage'],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -202,7 +238,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
         stageColor = Colors.grey;
     }
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         Navigator.push(
           context,
@@ -211,7 +247,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
           ),
         );
       },
-// Continuing with the _buildPrdItem method in prd_list_screen.dart
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -219,7 +255,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha(20),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -227,31 +263,32 @@ class _PrdListScreenState extends State<PrdListScreen> {
         ),
         child: Row(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: stageColor.withOpacity(0.2),
+                color: stageColor.withAlpha(30),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -293,7 +330,16 @@ class _PrdListScreenState extends State<PrdListScreen> {
                 title: const Text('Edit PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Navigate to edit screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PrdFormScreen(
+                        initialData: {
+                          'productName': prdTitle,
+                        },
+                      ),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -301,7 +347,9 @@ class _PrdListScreenState extends State<PrdListScreen> {
                 title: const Text('Download PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Download PRD logic
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Downloading PRD...')),
+                  );
                 },
               ),
               ListTile(
@@ -309,7 +357,14 @@ class _PrdListScreenState extends State<PrdListScreen> {
                 title: const Text('Archive PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Archive PRD logic
+                  // Update the PRD stage to 'Archived'
+                  setState(() {
+                    final prd = _prds.firstWhere((p) => p['title'] == prdTitle);
+                    prd['stage'] = 'Archived';
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('PRD archived')),
+                  );
                 },
               ),
               ListTile(
@@ -343,8 +398,16 @@ class _PrdListScreenState extends State<PrdListScreen> {
             ),
             TextButton(
               onPressed: () {
+                setState(() {
+                  _prds.removeWhere((prd) => prd['title'] == prdTitle);
+                });
                 Navigator.pop(context);
-                // Delete PRD logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('PRD deleted'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               },
               child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),

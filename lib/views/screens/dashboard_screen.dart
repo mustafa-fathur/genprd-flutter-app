@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:genprd/views/screens/prd_detail_screen.dart';
 import 'package:genprd/views/screens/prd_list_screen.dart';
 import 'package:genprd/views/screens/personnel_list_screen.dart';
-import 'package:genprd/views/screens/prd_form_screen.dart';
+import 'package:genprd/views/widgets/navigation_bar_widget.dart';
+import 'package:genprd/views/widgets/sidebar.dart';
+import 'package:genprd/views/widgets/top_bar_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<Widget> _screens = [
     const DashboardHomeScreen(),
@@ -19,46 +23,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const PersonnelListScreen(),
   ];
 
+  final List<String> _titles = [
+    'Dashboard',
+    'PRDs',
+    'Personnel',
+  ];
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _openDrawer() {
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  void _closeDrawer() {
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description),
-            label: 'PRD',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Personnel',
-          ),
-        ],
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
+      key: _scaffoldKey,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: TopBarWidget(
+          title: _titles[_currentIndex],
+          onMenuPressed: _openDrawer,
+        ),
       ),
-      floatingActionButton: _currentIndex == 1
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PrdFormScreen()),
-                );
-              },
-              backgroundColor: Theme.of(context).primaryColor,
-              child: const Icon(Icons.add),
-            )
-          : null,
+      drawer: Sidebar(onClose: _closeDrawer),
+      body: _screens[_currentIndex],
+      bottomNavigationBar: NavigationBarWidget(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+      ),
     );
   }
 }
@@ -68,19 +69,13 @@ class DashboardHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              // Profile action
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Refresh data
+        await Future.delayed(const Duration(seconds: 1));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,15 +152,21 @@ class DashboardHomeScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () {
                     // Navigate to PRD list
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PrdListScreen()),
+                    );
                   },
-                  child: Text(
-                    'See All',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                    ),
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  label: const Text('See All'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               ],
@@ -215,7 +216,7 @@ class DashboardHomeScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha(20),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -226,7 +227,7 @@ class DashboardHomeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withAlpha(30),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -270,62 +271,74 @@ class DashboardHomeScreen extends StatelessWidget {
     String subtitle,
     Color backgroundColor,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return InkWell(
+      onTap: () {
+        // Navigate to PRD detail
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PrdDetailScreen(title: title),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(10),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: const Icon(
-              Icons.description,
-              color: Colors.black54,
-              size: 24,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.description,
+                color: Colors.black54,
+                size: 24,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.grey,
-            size: 16,
-          ),
-        ],
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
