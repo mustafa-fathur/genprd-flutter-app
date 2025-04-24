@@ -32,8 +32,8 @@ class TopBarWidget extends StatelessWidget {
             child: CircleAvatar(
               radius: 16,
               backgroundColor: Theme.of(context).primaryColor.withAlpha(50),
-              backgroundImage: const NetworkImage(
-                'https://randomuser.me/api/portraits/men/1.jpg',
+              backgroundImage: const AssetImage(
+                'assets/images/profile.jpg',
               ),
             ),
           ),

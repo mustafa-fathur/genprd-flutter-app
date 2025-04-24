@@ -22,8 +22,8 @@ class UserProfileScreen extends StatelessWidget {
             // Profile picture
             const CircleAvatar(
               radius: 50,
-              backgroundImage: NetworkImage(
-                'https://randomuser.me/api/portraits/men/1.jpg',
+              backgroundImage: AssetImage(
+                'assets/images/profile.jpg',
               ),
             ),
             const SizedBox(height: 20),

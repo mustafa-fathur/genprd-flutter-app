@@ -21,10 +21,10 @@ class Sidebar extends StatelessWidget {
               color: Theme.of(context).primaryColor,
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 24,
-                    backgroundImage: NetworkImage(
-                      'https://randomuser.me/api/portraits/men/1.jpg',
+                    backgroundImage: const AssetImage(
+                      'assets/images/profile.jpg',
                     ),
                   ),
                   const SizedBox(width: 16),

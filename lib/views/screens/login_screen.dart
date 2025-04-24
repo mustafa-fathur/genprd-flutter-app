@@ -78,7 +78,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? const LoadingWidget()
                     : ElevatedButton.icon(
                         onPressed: _signInWithGoogle,
-                        icon: const Icon(Icons.g_mobiledata, size: 30),
+                        icon: Image.asset(
+                          'assets/images/google_logo.png',
+                          height: 24.0,
+                        ),
                         label: const Text(
                           'Sign in with Google',
                           style: TextStyle(

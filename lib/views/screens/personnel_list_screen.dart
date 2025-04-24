@@ -322,7 +322,7 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
                 setState(() {
                   if (isEditing) {
                     // Update existing personnel
-                    person!['name'] = nameController.text;
+                    person['name'] = nameController.text;
                     person['role'] = roleController.text;
                     person['contact'] = contactController.text;
                   } else {
