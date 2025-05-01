@@ -61,95 +61,96 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Search bar
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(20),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search personnel...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+    return Scaffold(
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              onChanged: (value) {
-                setState(() {});
-              },
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search personnel...',
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _searchController.clear();
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {});
+                },
+              ),
             ),
           ),
-        ),
-        
-        // Personnel list
-        Expanded(
-          child: _isLoading
-              ? const LoadingWidget()
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    
-                    // Simulate API call
-                    await Future.delayed(const Duration(seconds: 1));
-                    
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  },
-                  child: _filteredPersonnel.isEmpty
-                      ? const Center(
-                          child: Text('No personnel found'),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16.0),
-                          itemCount: _filteredPersonnel.length,
-                          itemBuilder: (context, index) {
-                            final person = _filteredPersonnel[index];
-                            return _buildPersonnelCard(context, person, index);
-                          },
-                        ),
-                ),
-        ),
-        
-        // FAB for adding new personnel
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: FloatingActionButton(
-            onPressed: () {
-              _showAddEditPersonnelDialog(context);
-            },
-            backgroundColor: Theme.of(context).primaryColor,
-            child: const Icon(Icons.add, color: Colors.white),
+          
+          // Personnel list
+          Expanded(
+            child: _isLoading
+                ? const LoadingWidget()
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      
+                      // Simulate API call
+                      await Future.delayed(const Duration(seconds: 1));
+                      
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    },
+                    child: _filteredPersonnel.isEmpty
+                        ? const Center(
+                            child: Text('No personnel found'),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16.0),
+                            itemCount: _filteredPersonnel.length,
+                            itemBuilder: (context, index) {
+                              final person = _filteredPersonnel[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: _buildPersonnelCard(context, person, index),
+                              );
+                            },
+                          ),
+                  ),
           ),
-        ),
-      ],
+        ],
+      ),
+      // Add FAB at bottom right corner
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showAddEditPersonnelDialog(context);
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
@@ -164,51 +165,103 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
     
     final color = colors[index % colors.length];
     
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16.0),
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Text(
-            person['name'][0],
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        title: Text(
-          person['name'],
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(person['role']),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'edit') {
-              _showAddEditPersonnelDialog(context, person: person);
-            } else if (value == 'delete') {
-              _showDeleteConfirmationDialog(context, person);
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Text('Edit Personnel'),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text('Delete Personnel', style: TextStyle(color: Colors.red)),
+    // Updated card style to match PRD items
+    return InkWell(
+      onTap: () {
+        // Show personnel details
+        _showAddEditPersonnelDialog(context, person: person, readOnly: true);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        onTap: () {
-          // Show personnel details
-          _showAddEditPersonnelDialog(context, person: person, readOnly: true);
-        },
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: color,
+              child: Text(
+                person['name'][0],
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    person['name'],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    person['role'],
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () {
+                _showOptionsMenu(context, person);
+              },
+            ),
+          ],
+        ),
       ),
+    );
+  }
+  
+  void _showOptionsMenu(BuildContext context, Map<String, dynamic> person) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+                title: const Text('Edit Personnel'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddEditPersonnelDialog(context, person: person);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete Personnel', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDeleteConfirmationDialog(context, person);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

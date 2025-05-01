@@ -48,7 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withAlpha(30),
+                    color: Color.alphaBlend(
+                      Theme.of(context).primaryColor.withAlpha(30),
+                      Colors.white,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Icon(

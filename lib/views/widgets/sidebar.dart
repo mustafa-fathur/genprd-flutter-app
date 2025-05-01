@@ -43,7 +43,7 @@ class Sidebar extends StatelessWidget {
                         Text(
                           'mustafa.fathur@gmail.com',
                           style: TextStyle(
-                            color: Colors.white.withAlpha(200),
+                            color: Colors.white.withAlpha(200), // Using withAlpha instead of withOpacity
                             fontSize: 12,
                           ),
                         ),

@@ -31,7 +31,10 @@ class TopBarWidget extends StatelessWidget {
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).primaryColor.withAlpha(50),
+              backgroundColor: Color.alphaBlend(
+                Theme.of(context).primaryColor.withAlpha(50),
+                Colors.white,
+              ),
               backgroundImage: const AssetImage(
                 'assets/images/profile.jpg',
               ),

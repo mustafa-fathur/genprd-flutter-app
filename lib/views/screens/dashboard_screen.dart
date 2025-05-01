@@ -155,10 +155,11 @@ class DashboardHomeScreen extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     // Navigate to PRD list
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PrdListScreen()),
-                    );
+                    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+                    if (dashboardState != null) {
+                      // Instead of calling setState directly, call the _onTabTapped method
+                      dashboardState._onTabTapped(1); // Index for PRD tab
+                    }
                   },
                   icon: const Icon(Icons.arrow_forward, size: 16),
                   label: const Text('See All'),

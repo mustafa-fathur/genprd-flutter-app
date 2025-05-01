@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/prd_form_screen.dart';
+import 'package:genprd/views/screens/prd_edit_screen.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String title;
@@ -16,10 +16,52 @@ class PrdDetailScreen extends StatefulWidget {
 class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   
+  // Add a map to store PRD data
+  late Map<String, dynamic> _prdData;
+  
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // Initialize PRD data - in a real app, this would come from an API or database
+    _prdData = {
+      'title': widget.title,
+      'version': '0.8.2',
+      'owner': 'Maha',
+      'stage': 'Draft',
+      'startDate': '2025-01-01',
+      'endDate': '2025-12-31',
+      'overview': 'This is a project overview for ${widget.title}. It describes the purpose, goals, and scope of the project.',
+      'problemStatements': 'The current system has several limitations:\n\n'
+          '1. Performance issues with large datasets\n'
+          '2. Limited mobile support\n'
+          '3. Lack of integration with other systems\n'
+          '4. Poor user experience',
+      'objectives': '1. Improve system performance by 50%\n'
+          '2. Develop a responsive mobile interface\n'
+          '3. Implement API integrations with key systems\n'
+          '4. Redesign the user interface for better UX',
+      'stakeholders': ['John Doe', 'Jane Smith'],
+      'developers': ['Mustafa Fathur Rahman', 'Fulana'],
+      'darci': {
+        'decisionMaker': 'John Doe',
+        'accountable': 'Jane Smith',
+        'responsible': ['Development Team'],
+        'consulted': ['UX Team', 'QA Team'],
+        'informed': ['Stakeholders'],
+      },
+      'successMetrics': '1. 50% improvement in system performance\n'
+          '2. 30% increase in mobile usage\n'
+          '3. 25% reduction in support tickets\n'
+          '4. 90% user satisfaction rating',
+      'timeline': 'January 1, 2025: Project Kickoff\n\n'
+          'January 15, 2025: Requirements Finalization\n\n'
+          'February 1, 2025: Design Phase Completion\n\n'
+          'March 1, 2025: Development Phase Completion\n\n'
+          'March 15, 2025: Testing Phase\n\n'
+          'April 1, 2025: Project Launch',
+    };
   }
   
   @override
@@ -32,7 +74,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(_prdData['title']),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -41,22 +83,21 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // Navigate to edit screen
+              // Navigate to edit screen with full prdData
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PrdFormScreen(
-                    initialData: {
-                      'productName': widget.title,
-                      'documentVersion': '0.8.2',
-                      'documentOwner': 'Maha',
-                      'projectOverview': 'This is a project overview',
-                      'startDate': '2025-01-01',
-                      'endDate': '2025-12-31',
-                    },
+                  builder: (context) => PrdEditScreen(
+                    prdData: _prdData,
                   ),
                 ),
-              );
+              ).then((updatedData) {
+                if (updatedData != null) {
+                  setState(() {
+                    _prdData = updatedData;
+                  });
+                }
+              });
             },
           ),
           IconButton(
@@ -90,7 +131,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Version 0.8.2',
+                        'Version ${_prdData['version']}',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -112,9 +153,9 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                     color: Colors.amber.withAlpha(30),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Draft',
-                    style: TextStyle(
+                  child: Text(
+                    _prdData['stage'],
+                    style: const TextStyle(
                       color: Colors.amber,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -148,35 +189,23 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
         children: [
           _buildSectionHeader('PRD Identity'),
           _buildInfoCard([
-            _buildInfoRow('Product Name:', widget.title),
-            _buildInfoRow('Document Version:', '0.8.2'),
+            _buildInfoRow('Product Name:', _prdData['title']),
+            _buildInfoRow('Document Version:', _prdData['version']),
+            _buildInfoRow('Document Owner:', _prdData['owner']),
             _buildInfoRow('Created Date:', '01/01/2025'),
           ]),
           
           const SizedBox(height: 20),
           _buildSectionHeader('Project Overview'),
-          _buildContentCard(
-            'This is a project overview for ${widget.title}. It describes the purpose, goals, and scope of the project.',
-          ),
+          _buildContentCard(_prdData['overview']),
           
           const SizedBox(height: 20),
           _buildSectionHeader('Problem Statements'),
-          _buildContentCard(
-            'The current system has several limitations:\n\n'
-            '1. Performance issues with large datasets\n'
-            '2. Limited mobile support\n'
-            '3. Lack of integration with other systems\n'
-            '4. Poor user experience',
-          ),
+          _buildContentCard(_prdData['problemStatements']),
           
           const SizedBox(height: 20),
           _buildSectionHeader('Objectives'),
-          _buildContentCard(
-            '1. Improve system performance by 50%\n'
-            '2. Develop a responsive mobile interface\n'
-            '3. Implement API integrations with key systems\n'
-            '4. Redesign the user interface for better UX',
-          ),
+          _buildContentCard(_prdData['objectives']),
         ],
       ),
     );
@@ -190,65 +219,53 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
         children: [
           _buildSectionHeader('Team Members'),
           _buildInfoCard([
-            _buildInfoRow('Document Owner:', 'Maha'),
-            _buildInfoRow('Project Manager:', 'John Doe'),
-            _buildInfoRow('Lead Developer:', 'Jane Smith'),
+            _buildInfoRow('Document Owner:', _prdData['owner']),
+            _buildInfoRow('Stakeholders:', _prdData['stakeholders'].join(', ')),
+            _buildInfoRow('Developers:', _prdData['developers'].join(', ')),
           ]),
           
           const SizedBox(height: 20),
           _buildSectionHeader('Timeline'),
-          _buildContentCard(
-            'January 1, 2025: Project Kickoff\n\n'
-            'January 15, 2025: Requirements Finalization\n\n'
-            'February 1, 2025: Design Phase Completion\n\n'
-            'March 1, 2025: Development Phase Completion\n\n'
-            'March 15, 2025: Testing Phase\n\n'
-            'April 1, 2025: Project Launch',
-          ),
+          _buildContentCard(_prdData['timeline']),
           
           const SizedBox(height: 20),
           _buildSectionHeader('Success Metrics'),
-          _buildContentCard(
-            '1. 50% improvement in system performance\n'
-            '2. 30% increase in mobile usage\n'
-            '3. 25% reduction in support tickets\n'
-            '4. 90% user satisfaction rating',
-          ),
+          _buildContentCard(_prdData['successMetrics']),
           
           const SizedBox(height: 20),
           _buildSectionHeader('DARCI Roles'),
           
           _buildDarciRoleCard(
             'Decider',
-            'John Doe',
+            _prdData['darci']['decisionMaker'],
             'Responsible for making final decisions on project direction and scope.',
           ),
           const SizedBox(height: 12),
           
           _buildDarciRoleCard(
             'Accountable',
-            'Jane Smith',
+            _prdData['darci']['accountable'],
             'Accountable for the successful delivery of the project.',
           ),
           const SizedBox(height: 12),
           
           _buildDarciRoleCard(
             'Responsible',
-            'Development Team',
+            _prdData['darci']['responsible'].join(', '),
             'Responsible for implementing the project requirements.',
           ),
           const SizedBox(height: 12),
           
           _buildDarciRoleCard(
             'Consulted',
-            'UX Team, QA Team',
+            _prdData['darci']['consulted'].join(', '),
             'Consulted for expertise in specific areas of the project.',
           ),
           const SizedBox(height: 12),
           
           _buildDarciRoleCard(
             'Informed',
-            'Stakeholders',
+            _prdData['darci']['informed'].join(', '),
             'Kept informed about project progress and milestones.',
           ),
         ],
@@ -400,22 +417,21 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                 title: const Text('Edit PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Navigate to edit screen
+                  // Navigate to edit screen with full prdData
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PrdFormScreen(
-                        initialData: {
-                          'productName': widget.title,
-                          'documentVersion': '0.8.2',
-                          'documentOwner': 'Maha',
-                          'projectOverview': 'This is a project overview',
-                          'startDate': '2025-01-01',
-                          'endDate': '2025-12-31',
-                        },
+                      builder: (context) => PrdEditScreen(
+                        prdData: _prdData,
                       ),
                     ),
-                  );
+                  ).then((updatedData) {
+                    if (updatedData != null) {
+                      setState(() {
+                        _prdData = updatedData;
+                      });
+                    }
+                  });
                 },
               ),
               ListTile(
