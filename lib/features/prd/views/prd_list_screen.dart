@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/prd_detail_screen.dart';
-import 'package:genprd/views/screens/prd_form_screen.dart';
-import 'package:genprd/views/screens/prd_edit_screen.dart'; // Add this import
-import 'package:genprd/views/shared/loading_widget.dart';
+import 'package:genprd/features/prd/views/prd_detail_screen.dart';
+import 'package:genprd/features/prd/views/prd_form_screen.dart';
+import 'package:genprd/features/prd/views/prd_edit_screen.dart';
+import 'package:genprd/shared/widgets/loading_widget.dart';
 import 'package:intl/intl.dart'; // Add this import for DateFormat
 
 class PrdListScreen extends StatefulWidget {

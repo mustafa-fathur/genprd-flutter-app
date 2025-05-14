@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/prd_detail_screen.dart';
-import 'package:genprd/views/screens/prd_list_screen.dart';
-import 'package:genprd/views/screens/personnel_list_screen.dart';
-import 'package:genprd/views/widgets/navigation_bar_widget.dart';
-import 'package:genprd/views/widgets/sidebar.dart';
-import 'package:genprd/views/widgets/top_bar_widget.dart';
+import 'package:genprd/features/prd/views/prd_detail_screen.dart';
+import 'package:genprd/features/prd/views/prd_list_screen.dart';
+import 'package:genprd/features/personnel/views/personnel_list_screen.dart';
+import 'package:genprd/shared/widgets/navigation_bar_widget.dart';
+import 'package:genprd/shared/widgets/sidebar.dart';
+import 'package:genprd/shared/widgets/top_bar_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
-  }
+}
 
   void _closeDrawer() {
     Navigator.of(context).pop();

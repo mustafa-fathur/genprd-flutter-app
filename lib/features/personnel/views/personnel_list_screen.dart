@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/shared/loading_widget.dart';
+import 'package:genprd/shared/widgets/loading_widget.dart';
 
 class PersonnelListScreen extends StatefulWidget {
   const PersonnelListScreen({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/user_profile_screen.dart';
+import 'package:genprd/features/user/views/user_profile_screen.dart';
 
 class TopBarWidget extends StatelessWidget {
   final String title;

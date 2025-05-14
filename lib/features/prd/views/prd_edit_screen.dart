@@ -292,7 +292,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       });
       
       if (mounted) {
-        Navigator.pop(context, updatedData); // Return the updated data
+        Navigator.pop(context, updatedData);
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

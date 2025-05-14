@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/dashboard_screen.dart';
-import 'package:genprd/views/shared/loading_widget.dart';
+import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
+import 'package:genprd/shared/widgets/loading_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

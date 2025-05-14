@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/prd_edit_screen.dart';
+import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String title;

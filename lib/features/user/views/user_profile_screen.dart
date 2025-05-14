@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/views/screens/login_screen.dart';
+import 'package:genprd/features/auth/views/login_screen.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
