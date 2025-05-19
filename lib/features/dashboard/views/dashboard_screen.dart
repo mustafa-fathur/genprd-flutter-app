@@ -5,6 +5,8 @@ import 'package:genprd/features/personnel/views/personnel_list_screen.dart';
 import 'package:genprd/shared/widgets/navigation_bar_widget.dart';
 import 'package:genprd/shared/widgets/sidebar.dart';
 import 'package:genprd/shared/widgets/top_bar_widget.dart';
+import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/widgets/screen_title_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,7 +17,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<Widget> _screens = [
     const DashboardHomeScreen(),
@@ -35,9 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
-}
+  }
 
   void _closeDrawer() {
     Navigator.of(context).pop();
@@ -69,6 +72,9 @@ class DashboardHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh data
@@ -76,95 +82,88 @@ class DashboardHomeScreen extends StatelessWidget {
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // User greeting
-            const Text(
-              'Welcome back,',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+            // Screen title
+            ScreenTitleWidget(
+              title: 'Dashboard', 
+              subtitle: 'Welcome back, Mustafa Fathur',
             ),
-            const SizedBox(height: 4),
-            const Text(
-              'Mustafa Fathur',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             
-            // Stats cards
-            Row(
+            // Stats display
+            GridView.count(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              childAspectRatio: 2.2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
               children: [
-                _buildStatCard(
+                _buildStatItem(
                   context,
                   'Total PRDs',
                   '12',
                   Icons.description,
-                  Colors.blue,
                 ),
-                const SizedBox(width: 16),
-                _buildStatCard(
-                  context,
-                  'Draft PRDs',
-                  '5',
-                  Icons.edit_document,
-                  Colors.orange,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildStatCard(
+                _buildStatItem(
                   context,
                   'Personnel',
-                  '12',
+                  '8',
                   Icons.people,
-                  Colors.green,
                 ),
-                const SizedBox(width: 16),
-                _buildStatCard(
+                _buildStatItem(
                   context,
-                  'Completed',
-                  '7',
-                  Icons.check_circle,
-                  Colors.purple,
+                  'Draft PRDs',
+                  '3',
+                  Icons.edit_note,
+                ),
+                _buildStatItem(
+                  context,
+                  'In Progress',
+                  '4',
+                  Icons.pending_actions,
+                ),
+                _buildStatItem(
+                  context,
+                  'Finished',
+                  '3',
+                  Icons.task_alt,
+                ),
+                _buildStatItem(
+                  context,
+                  'Archived',
+                  '2',
+                  Icons.archive,
                 ),
               ],
             ),
             
             const SizedBox(height: 32),
             
+            const SizedBox(height: 24),
+            
             // Recent PRDs section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Recent PRDs',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    // Navigate to PRD list
+                    // Navigate to PRD list by changing the current index
                     final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
                     if (dashboardState != null) {
-                      // Instead of calling setState directly, call the _onTabTapped method
                       dashboardState._onTabTapped(1); // Index for PRD tab
                     }
                   },
-                  icon: const Icon(Icons.arrow_forward, size: 16),
-                  label: const Text('See All'),
+                  icon: Icon(Icons.arrow_forward, size: 16, color: theme.colorScheme.primary),
+                  label: Text('See All', style: textTheme.labelMedium?.copyWith(color: theme.colorScheme.primary)),
                   style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).primaryColor,
                     padding: EdgeInsets.zero,
                     minimumSize: const Size(0, 0),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -172,29 +171,38 @@ class DashboardHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             
-            _buildRecentPrdItem(
-              context,
-              'SIMSAPRAS',
-              'Last updated: 25/03/2025',
-              Colors.blue.shade100,
-            ),
-            const SizedBox(height: 12),
-            
-            _buildRecentPrdItem(
-              context,
-              'SIRANCAK',
-              'Last updated: 17/02/2025',
-              Colors.green.shade100,
-            ),
-            const SizedBox(height: 12),
-            
-            _buildRecentPrdItem(
-              context,
-              'Gojek Lite',
-              'Last updated: 01/01/2026',
-              Colors.orange.shade100,
+            Column(
+              children: [
+                _buildRecentPrdItem(
+                  context,
+                  'SIMSAPRAS',
+                  'Last updated: 25/03/2025',
+                  AppTheme.badgeColors['In Progress'] ?? Colors.blue.shade700,
+                ),
+                Divider(height: 1, thickness: 0.5, indent: 72, color: Colors.grey.shade200),
+                _buildRecentPrdItem(
+                  context,
+                  'SIRANCAK',
+                  'Last updated: 17/02/2025',
+                  AppTheme.badgeColors['Finished'] ?? Colors.green.shade700,
+                ),
+                Divider(height: 1, thickness: 0.5, indent: 72, color: Colors.grey.shade200),
+                _buildRecentPrdItem(
+                  context,
+                  'Gojek Lite',
+                  'Last updated: 01/01/2026',
+                  AppTheme.badgeColors['Draft'] ?? Colors.orange.shade700,
+                ),
+                Divider(height: 1, thickness: 0.5, indent: 72, color: Colors.grey.shade200),
+                _buildRecentPrdItem(
+                  context,
+                  'Food Delivery App',
+                  'Last updated: 18/04/2025',
+                  AppTheme.badgeColors['Archived'] ?? Colors.grey.shade700,
+                ),
+              ],
             ),
           ],
         ),
@@ -202,66 +210,51 @@ class DashboardHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
+  Widget _buildStatItem(
     BuildContext context,
     String title,
     String value,
     IconData icon,
-    Color color,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final primaryColor = theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: primaryColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withAlpha(30),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -270,8 +263,22 @@ class DashboardHomeScreen extends StatelessWidget {
     BuildContext context,
     String title,
     String subtitle,
-    Color backgroundColor,
+    Color backgroundColor, // We'll reuse this parameter for badge color
   ) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final primaryColor = theme.colorScheme.primary;
+    
+    // Determine status from background color (temporary solution until refactoring)
+    String status = 'Draft';
+    if (backgroundColor == AppTheme.badgeColors['Finished'] || backgroundColor == Colors.green.shade100) {
+      status = 'Finished';
+    } else if (backgroundColor == AppTheme.badgeColors['In Progress'] || backgroundColor == Colors.blue.shade100) {
+      status = 'In Progress';
+    } else if (backgroundColor == AppTheme.badgeColors['Archived'] || backgroundColor == Colors.grey.shade100) {
+      status = 'Archived';
+    }
+
     return InkWell(
       onTap: () {
         // Navigate to PRD detail
@@ -282,32 +289,19 @@ class DashboardHomeScreen extends StatelessWidget {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      splashColor: theme.colorScheme.primary.withOpacity(0.1),
+      highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
+            CircleAvatar(
+              backgroundColor: primaryColor.withOpacity(0.1),
+              radius: 20,
+              child: Icon(
                 Icons.description,
-                color: Colors.black54,
-                size: 24,
+                color: primaryColor,
+                size: 20,
               ),
             ),
             const SizedBox(width: 16),
@@ -317,26 +311,29 @@ class DashboardHomeScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey,
-              size: 16,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.badgeColors[status]?.withOpacity(0.15) ?? backgroundColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                status,
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppTheme.badgeColors[status] ?? backgroundColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         ),

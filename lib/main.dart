@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/views/splash_screen.dart';
+// import 'package:genprd/shared/views/dashboard_screen.dart'; // Remove DashboardScreen import
 
 void main() {
   runApp(const MyApp());

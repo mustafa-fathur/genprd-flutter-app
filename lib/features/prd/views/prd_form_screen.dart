@@ -134,24 +134,11 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
       // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
       
-      // In a real app, you would save all form data including:
-      final prdData = {
-        'productName': _productNameController.text,
-        'documentVersion': _documentVersionController.text,
-        'documentOwner': _documentOwnerController.text,
-        'projectOverview': _projectOverviewController.text,
-        'startDate': _startDate?.toIso8601String(),
-        'endDate': _endDate?.toIso8601String(),
-        'stakeholders': _selectedStakeholders,
-        'developers': _selectedDevelopers,
-        'darci': {
-          'decisionMaker': _decisionMaker,
-          'accountable': _accountable,
-          'responsible': _responsible,
-          'consulted': _consulted,
-          'informed': _informed,
-        }
-      };
+      // TODO: Implement PRD creation/editing logic
+      // final prdData = Prd(
+      //   title: _titleController.text,
+      //   // ... other fields ...
+      // );
       
       setState(() {
         _isLoading = false;
@@ -181,6 +168,8 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     bool singleSelect = false,
   }) {
     final tempSelection = List<String>.from(selectedPersonnel);
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     
     showDialog(
       context: context,
@@ -188,17 +177,36 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(title),
+              title: Text(
+                title, 
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               content: SizedBox(
                 width: double.maxFinite,
-                child: ListView(
+                child: ListView.separated(
                   shrinkWrap: true,
-                  children: _personnel.map((person) {
+                  itemCount: _personnel.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: Colors.grey.shade200,
+                  ),
+                  itemBuilder: (context, index) {
+                    final person = _personnel[index];
                     final isSelected = tempSelection.contains(person['name']);
                     return CheckboxListTile(
-                      title: Text(person['name']),
-                      subtitle: Text(person['role']),
+                      title: Text(
+                        person['name'],
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Text(
+                        person['role'],
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
                       value: isSelected,
+                      activeColor: primaryColor,
+                      checkColor: Colors.white,
                       onChanged: (value) {
                         setDialogState(() {
                           if (singleSelect) {
@@ -215,13 +223,15 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                           }
                         });
                       },
+                      controlAffinity: ListTileControlAffinity.trailing,
                     );
-                  }).toList(),
+                  },
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
@@ -229,6 +239,7 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                     onSave(tempSelection);
                     Navigator.pop(context);
                   },
+                  style: TextButton.styleFrom(foregroundColor: primaryColor),
                   child: const Text('Save'),
                 ),
               ],
@@ -242,6 +253,7 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.initialData != null;
+    final theme = Theme.of(context);
     
     return Scaffold(
       appBar: AppBar(
@@ -252,15 +264,19 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         ),
         actions: [
           if (!_isLoading)
-            TextButton.icon(
-              onPressed: _savePrd,
-              icon: const Icon(Icons.save, color: Colors.white),
-              label: const Text(
-                'Save',
-                style: TextStyle(color: Colors.white),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TextButton.icon(
+                onPressed: _savePrd,
+                icon: const Icon(Icons.save, color: Colors.white),
+                label: const Text(
+                  'Save',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
         ],
+        elevation: 0,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -512,12 +528,21 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                   ElevatedButton(
                     onPressed: _savePrd,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 1,
+                    ),
+                    child: Text(
+                      isEditing ? 'Update PRD' : 'Create PRD',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    child: Text(isEditing ? 'Update PRD' : 'Create PRD'),
                   ),
                   
                   const SizedBox(height: 32),
@@ -528,17 +553,24 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
+          style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
           ),
         ),
-        const Divider(),
+        const SizedBox(height: 6),
+        Divider(
+          color: Colors.grey.shade200,
+          thickness: 1,
+        ),
         const SizedBox(height: 16),
       ],
     );
@@ -552,30 +584,28 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     int maxLines = 1,
     String? hint,
   }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: TextFormField(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
-          prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
+          fillColor: Colors.grey.shade50,
+          prefixIcon: icon != null ? Icon(icon, color: primaryColor, size: 20) : null,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -583,6 +613,7 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         ),
         validator: validator,
         maxLines: maxLines,
+        cursorColor: primaryColor,
       ),
     );
   }
@@ -592,6 +623,9 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     required String value,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -600,21 +634,15 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           vertical: 16,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today,
-              color: Colors.grey,
+              color: primaryColor,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -632,8 +660,9 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -651,21 +680,19 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     required List<String> selectedMembers,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final textTheme = theme.textTheme;
+    
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,12 +702,11 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(icon, color: Theme.of(context).primaryColor),
+                    Icon(icon, color: primaryColor),
                     const SizedBox(width: 12),
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -689,17 +715,18 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                 Icon(
                   Icons.edit,
                   size: 16,
-                  color: Theme.of(context).primaryColor,
+                  color: primaryColor,
                 ),
               ],
             ),
             if (selectedMembers.isEmpty) ...[
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'No members selected. Tap to select.',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: Colors.grey.shade600,
                   fontStyle: FontStyle.italic,
+                  fontSize: 14,
                 ),
               ),
             ] else ...[
@@ -709,20 +736,25 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
                 runSpacing: 8,
                 children: selectedMembers.map((member) {
                   return Chip(
-                    label: Text(member),
-                    backgroundColor: Color.alphaBlend(
-                      Theme.of(context).primaryColor.withAlpha(25), // Using withAlpha instead of withOpacity
-                      Colors.white,
+                    label: Text(
+                      member,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: primaryColor,
+                      ),
                     ),
+                    backgroundColor: primaryColor.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    deleteIcon: const Icon(Icons.close, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    deleteIcon: Icon(Icons.close, size: 16, color: primaryColor),
                     onDeleted: () {
                       setState(() {
                         selectedMembers.remove(member);
                       });
                     },
+                    padding: EdgeInsets.symmetric(horizontal: 4),
                   );
                 }).toList(),
               ),

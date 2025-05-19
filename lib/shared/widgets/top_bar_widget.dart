@@ -14,11 +14,20 @@ class TopBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: onMenuPressed,
+      backgroundColor: Theme.of(context).primaryColor,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: Text(
+        'GenPRD',
+        style: const TextStyle(
+          fontFamily: 'Helvetica Neue',
+          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          color: Colors.white,
+          letterSpacing: -0.5,
+        ),
       ),
+      centerTitle: false,
       actions: [
         GestureDetector(
           onTap: () {
@@ -30,14 +39,8 @@ class TopBarWidget extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              radius: 16,
-              backgroundColor: Color.alphaBlend(
-                Theme.of(context).primaryColor.withAlpha(50),
-                Colors.white,
-              ),
-              backgroundImage: const AssetImage(
-                'assets/images/profile.jpg',
-              ),
+              radius: 18,
+              backgroundImage: const AssetImage('assets/images/profile.jpg'),
             ),
           ),
         ),

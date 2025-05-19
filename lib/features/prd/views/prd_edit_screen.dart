@@ -348,8 +348,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
         if (shouldPop && mounted) {
           Navigator.of(context).pop();
         }
-      },
-      child: Scaffold(
+      },      child: Scaffold(
         appBar: AppBar(
           title: const Text('Edit PRD'),
           leading: IconButton(
@@ -364,10 +363,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
           ),
           actions: [
             if (_isDirty && !_isLoading)
-              IconButton(
-                icon: const Icon(Icons.save),
-                tooltip: 'Save Changes',
-                onPressed: _saveChanges,
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.save),
+                  tooltip: 'Save Changes',
+                  onPressed: _saveChanges,
+                ),
               ),
           ],
           bottom: TabBar(
@@ -380,9 +382,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               Tab(text: 'Team & Roles'),
               Tab(text: 'Project Details'),
             ],
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 3,
           ),
+          elevation: 0,
         ),
         body: _isLoading
             ? Center(
@@ -931,35 +935,42 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: child,
     );
   }
   
   Widget _buildSectionHeader(String title, {IconData? icon}) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
-            Icon(icon, color: Theme.of(context).primaryColor, size: 24),
-            const SizedBox(width: 12),
-          ],
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: theme.colorScheme.primary, size: 22),
+                const SizedBox(width: 10),
+              ],
+              Text(
+                title,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Divider(
+            color: Colors.grey.shade200,
+            thickness: 1,
           ),
         ],
       ),
@@ -977,40 +988,46 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     IconData? suffixIcon,
     VoidCallback? onSuffixTap,
   }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: readOnly ? Colors.grey[50] : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            color: readOnly ? Colors.grey.shade100 : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
           ),
           child: TextFormField(
             controller: controller,
             readOnly: readOnly,
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey[600]) : null,
+              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: primaryColor, size: 20) : null,
               suffixIcon: suffixIcon != null ? 
                 IconButton(
-                  icon: Icon(suffixIcon, color: Theme.of(context).primaryColor),
+                  icon: Icon(suffixIcon, color: primaryColor, size: 20),
                   onPressed: onSuffixTap,
                 ) : null,
             ),
             maxLines: maxLines,
             validator: validator,
+            style: TextStyle(fontSize: 15),
+            cursorColor: primaryColor,
           ),
         ),
       ],
@@ -1023,34 +1040,39 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     required VoidCallback onTap,
   }) {
     final formattedDate = DateFormat('MM/dd/yyyy').format(date);
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
           ),
         ),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today, size: 20, color: Colors.grey[600]),
+                Icon(Icons.calendar_today, size: 20, color: primaryColor),
                 const SizedBox(width: 12),
-                Text(formattedDate),
+                Text(
+                  formattedDate,
+                  style: TextStyle(fontSize: 15),
+                ),
               ],
             ),
           ),
@@ -1066,15 +1088,19 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     required List<String> selectedMembers,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final textTheme = theme.textTheme;
+    
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1084,12 +1110,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               children: [
                 Row(
                   children: [
-                    Icon(icon, color: Theme.of(context).primaryColor),
+                    Icon(icon, color: primaryColor, size: 20),
                     const SizedBox(width: 12),
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1098,13 +1123,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withAlpha(30),
+                    color: primaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.edit,
                     size: 16,
-                    color: Theme.of(context).primaryColor,
+                    color: primaryColor,
                   ),
                 ),
               ],
@@ -1112,9 +1137,8 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
             const SizedBox(height: 4),
             Text(
               description,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+              style: textTheme.bodySmall?.copyWith(
+                color: Colors.grey.shade600,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1123,17 +1147,19 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.person_add, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.person_add, size: 16, color: Colors.grey.shade600),
                     const SizedBox(width: 8),
                     Text(
                       'Tap to select members',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -1147,26 +1173,30 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 children: selectedMembers.map((member) {
                   return Chip(
                     avatar: CircleAvatar(
-                      backgroundColor: Theme.of(context).primaryColor,
+                      backgroundColor: primaryColor,
+                      radius: 12,
                       child: Text(
                         member[0],
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    label: Text(member),
-                    backgroundColor: Color.alphaBlend(
-                      Theme.of(context).primaryColor.withAlpha(15),
-                      Colors.white,
+                    label: Text(
+                      member,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: primaryColor,
+                      ),
                     ),
-                    labelStyle: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontSize: 12,
+                    backgroundColor: primaryColor.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                   );
                 }).toList(),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/prd/views/prd_edit_screen.dart';
+import 'package:genprd/shared/config/themes/app_theme.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String title;
@@ -72,8 +73,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return Scaffold(      appBar: AppBar(
         title: Text(_prdData['title']),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -82,6 +82,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: 'Edit PRD',
             onPressed: () {
               // Navigate to edit screen with full prdData
               Navigator.push(
@@ -102,6 +103,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           ),
           IconButton(
             icon: const Icon(Icons.more_vert),
+            tooltip: 'More options',
             onPressed: () {
               _showOptionsMenu(context);
             },
@@ -112,18 +114,27 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
+          indicatorWeight: 3.0,
           tabs: const [
             Tab(text: 'Overview'),
             Tab(text: 'Team & Roles'),
           ],
         ),
+        elevation: 0,
       ),
       body: Column(
-        children: [
-          // Status bar
+        children: [          // Status bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.white,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.shade200,
+                  width: 1,
+                ),
+              ),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -132,15 +143,14 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                     children: [
                       Text(
                         'Version ${_prdData['version']}',
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         'Last Updated: 01/01/2025',
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
                       ),
@@ -150,14 +160,15 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withAlpha(30),
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppTheme.badgeColors[_prdData['stage']]?.withOpacity(0.15) ?? 
+                           Colors.grey.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     _prdData['stage'],
-                    style: const TextStyle(
-                      color: Colors.amber,
-                      fontWeight: FontWeight.bold,
+                    style: TextStyle(
+                      color: AppTheme.badgeColors[_prdData['stage']] ?? Colors.grey,
+                      fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
                   ),
@@ -274,15 +285,26 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
         ),
-      ),
+        const SizedBox(height: 6),
+        Divider(
+          color: Colors.grey.shade200,
+          thickness: 1,
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -291,15 +313,9 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,24 +325,19 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   Widget _buildContentCard(String content) {
+    final theme = Theme.of(context);
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Text(
         content,
-        style: const TextStyle(
-          fontSize: 14,
+        style: theme.textTheme.bodyMedium?.copyWith(
           height: 1.5,
         ),
       ),
@@ -334,8 +345,11 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -343,13 +357,17 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
               ),
             ),
           ),
           Expanded(
-            child: Text(value),
+            child: Text(
+              value,
+              style: textTheme.bodyMedium,
+            ),
           ),
         ],
       ),
@@ -357,41 +375,37 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   Widget _buildDarciRoleCard(String role, String people, String guidelines) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             role,
-            style: const TextStyle(
+            style: textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              color: theme.colorScheme.primary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             people,
-            style: const TextStyle(fontSize: 14),
+            style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 4),
           Text(
             guidelines,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
+            style: textTheme.bodySmall?.copyWith(
+              color: Colors.grey.shade600,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -401,20 +415,34 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   void _showOptionsMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               ListTile(
-                leading: Icon(Icons.edit, color: Theme.of(context).primaryColor),
-                title: const Text('Edit PRD'),
+                leading: Icon(Icons.edit, color: theme.colorScheme.primary),
+                title: Text('Edit PRD', style: theme.textTheme.titleSmall),
                 onTap: () {
                   Navigator.pop(context);
                   // Navigate to edit screen with full prdData
@@ -435,28 +463,37 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                 },
               ),
               ListTile(
-                leading: Icon(Icons.download, color: Theme.of(context).primaryColor),
-                title: const Text('Download PRD'),
+                leading: Icon(Icons.download, color: theme.colorScheme.primary),
+                title: Text('Download PRD', style: theme.textTheme.titleSmall),
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Downloading PRD...')),
+                    SnackBar(
+                      content: const Text('Downloading PRD...'),
+                      backgroundColor: theme.colorScheme.primary,
+                    ),
                   );
                 },
               ),
               ListTile(
-                leading: Icon(Icons.archive, color: Theme.of(context).primaryColor),
-                title: const Text('Archive PRD'),
+                leading: Icon(Icons.archive, color: theme.colorScheme.primary),
+                title: Text('Archive PRD', style: theme.textTheme.titleSmall),
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('PRD archived')),
+                    SnackBar(
+                      content: const Text('PRD archived'),
+                      backgroundColor: theme.colorScheme.primary,
+                    ),
                   );
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete PRD', style: TextStyle(color: Colors.red)),
+                title: Text(
+                  'Delete PRD', 
+                  style: theme.textTheme.titleSmall?.copyWith(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _showDeleteConfirmationDialog(context);
@@ -470,12 +507,21 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   }
 
   void _showDeleteConfirmationDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete PRD'),
-          content: Text('Are you sure you want to delete "${widget.title}"?'),
+          title: Text(
+            'Delete PRD',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${widget.title}"? This action cannot be undone.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
               onPressed: () {
@@ -488,10 +534,14 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                 Navigator.pop(context);
                 Navigator.pop(context); // Go back to PRD list
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('PRD deleted')),
+                  SnackBar(
+                    content: const Text('PRD deleted'),
+                    backgroundColor: Colors.red.shade700,
+                  ),
                 );
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
             ),
           ],
         );

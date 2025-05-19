@@ -56,6 +56,13 @@ dependencies:
   # URL Launcher
   url_launcher: ^6.2.5
 
+  # Custom Clippers
+  flutter_custom_clippers: ^2.1.0
+
+  # Slider Drawer
+  flutter_slider_drawer: ^2.1.1
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

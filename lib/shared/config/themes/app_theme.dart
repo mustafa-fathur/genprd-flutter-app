@@ -6,6 +6,14 @@ class AppTheme {
   static const backgroundColor = Colors.white;
   static const textColor = Color(0xFF333333);
 
+  // Define badge colors
+  static final Map<String, Color> badgeColors = {
+    'Draft': Colors.orange.shade700,
+    'In Progress': Colors.blue.shade700,
+    'Finished': Colors.green.shade700,
+    'Archived': Colors.grey.shade700,
+  };
+
   static final ThemeData lightTheme = ThemeData(
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,

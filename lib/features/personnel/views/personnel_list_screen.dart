@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:genprd/features/personnel/views/personnel_add_screen.dart';
+import 'package:genprd/features/personnel/views/personnel_detail_screen.dart';
+import 'package:genprd/features/personnel/views/personnel_edit_screen.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
+import 'package:genprd/shared/widgets/screen_title_widget.dart';
 
 class PersonnelListScreen extends StatefulWidget {
   const PersonnelListScreen({super.key});
@@ -64,46 +68,51 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Search bar
+          // Title and Search bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Screen Title
+                ScreenTitleWidget(
+                  title: 'Personnel',
+                  subtitle: 'Manage team members and roles',
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(25),
                   ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search personnel...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search personnel...',
+                      hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, color: Colors.grey[500], size: 18),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                });
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {});
+                    },
                   ),
                 ),
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
+              ],
             ),
           ),
           
@@ -128,15 +137,18 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
                         ? const Center(
                             child: Text('No personnel found'),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16.0),
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             itemCount: _filteredPersonnel.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              indent: 72,
+                              color: Colors.grey.shade200,
+                            ),
                             itemBuilder: (context, index) {
                               final person = _filteredPersonnel[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: _buildPersonnelCard(context, person, index),
-                              );
+                              return _buildPersonnelItem(context, person);
                             },
                           ),
                   ),
@@ -146,52 +158,52 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
       // Add FAB at bottom right corner
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddEditPersonnelDialog(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PersonnelAddScreen(onSave: (newPerson) {
+                setState(() {
+                  _personnel.add(newPerson);
+                });
+              }),
+            ),
+          );
         },
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
 
-  Widget _buildPersonnelCard(BuildContext context, Map<String, dynamic> person, int index) {
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-    ];
+  Widget _buildPersonnelItem(BuildContext context, Map<String, dynamic> person) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final primaryColor = theme.colorScheme.primary;
     
-    final color = colors[index % colors.length];
-    
-    // Updated card style to match PRD items
     return InkWell(
       onTap: () {
-        // Show personnel details
-        _showAddEditPersonnelDialog(context, person: person, readOnly: true);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PersonnelDetailScreen(person: person),
+          ),
+        );
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      splashColor: primaryColor.withOpacity(0.1),
+      highlightColor: primaryColor.withOpacity(0.05),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color,
+              backgroundColor: primaryColor.withOpacity(0.1),
+              radius: 20,
               child: Text(
-                person['name'][0],
-                style: const TextStyle(color: Colors.white),
+                person['name'][0].toUpperCase(),
+                style: textTheme.titleMedium?.copyWith(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -201,25 +213,26 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
                 children: [
                   Text(
                     person['name'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     person['role'],
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.more_vert),
+              icon: Icon(
+                Icons.more_vert,
+                color: Colors.grey.shade600,
+                size: 20,
+              ),
               onPressed: () {
                 _showOptionsMenu(context, person);
               },
@@ -243,16 +256,19 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.edit, color: Theme.of(context).primaryColor),
                 title: const Text('Edit Personnel'),
                 onTap: () {
                   Navigator.pop(context);
-                  _showAddEditPersonnelDialog(context, person: person);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PersonnelEditScreen(person: person),
+                    ),
+                  ).then((_) => setState(() {})); // Refresh list after returning
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete Personnel', style: TextStyle(color: Colors.red)),
+                title: const Text('Delete Personnel'),
                 onTap: () {
                   Navigator.pop(context);
                   _showDeleteConfirmationDialog(context, person);
@@ -265,148 +281,7 @@ class _PersonnelListScreenState extends State<PersonnelListScreen> {
     );
   }
 
-  void _showAddEditPersonnelDialog(
-    BuildContext context, {
-    Map<String, dynamic>? person,
-    bool readOnly = false,
-  }) {
-    final isEditing = person != null && !readOnly;
-    final isViewing = person != null && readOnly;
-    
-    final nameController = TextEditingController(text: person?['name'] ?? '');
-    final roleController = TextEditingController(text: person?['role'] ?? '');
-    final contactController = TextEditingController(text: person?['contact'] ?? '');
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          isViewing
-              ? 'Personnel Details'
-              : isEditing
-                  ? 'Edit Personnel'
-                  : 'Add Personnel',
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isViewing)
-                const Text('Add a new personnel for the PRD system'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  suffixIcon: !readOnly
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            nameController.clear();
-                          },
-                        )
-                      : null,
-                ),
-                readOnly: readOnly,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: roleController,
-                decoration: InputDecoration(
-                  labelText: 'Role',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  suffixIcon: !readOnly
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            roleController.clear();
-                          },
-                        )
-                      : null,
-                ),
-                readOnly: readOnly,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: contactController,
-                decoration: InputDecoration(
-                  labelText: 'Contact',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  suffixIcon: !readOnly
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            contactController.clear();
-                          },
-                        )
-                      : null,
-                ),
-                readOnly: readOnly,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          if (!readOnly)
-            TextButton(
-              onPressed: () {
-                if (nameController.text.isEmpty || roleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Name and Role are required'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                
-                // In a real app, you would save the data to your backend
-                setState(() {
-                  if (isEditing) {
-                    // Update existing personnel
-                    person['name'] = nameController.text;
-                    person['role'] = roleController.text;
-                    person['contact'] = contactController.text;
-                  } else {
-                    // Add new personnel
-                    _personnel.add({
-                      'name': nameController.text,
-                      'role': roleController.text,
-                      'contact': contactController.text,
-                    });
-                  }
-                });
-                
-                Navigator.of(context).pop();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isEditing
-                          ? 'Personnel updated successfully'
-                          : 'Personnel added successfully',
-                    ),
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                );
-              },
-              child: Text(isEditing ? 'Update' : 'Add'),
-            ),
-        ],
-      ),
-    );
-  }
+
 
   void _showDeleteConfirmationDialog(BuildContext context, Map<String, dynamic> person) {
     showDialog(

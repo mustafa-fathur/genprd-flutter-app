@@ -3,7 +3,8 @@ import 'package:genprd/features/prd/views/prd_detail_screen.dart';
 import 'package:genprd/features/prd/views/prd_form_screen.dart';
 import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
-import 'package:intl/intl.dart'; // Add this import for DateFormat
+import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/widgets/screen_title_widget.dart';
 
 class PrdListScreen extends StatefulWidget {
   const PrdListScreen({super.key});
@@ -18,37 +19,27 @@ class _PrdListScreenState extends State<PrdListScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   
-  // Mock data - Updated to include "In Progress" example
+  // Mock data - One example for each status
   final List<Map<String, dynamic>> _prds = [
     {
-      'title': 'SIMSAPRAS',
+      'title': 'Customer Feedback Portal',
       'updated': '3/15/2023',
       'stage': 'Draft',
     },
     {
-      'title': 'SIRANCAK',
-      'updated': '3/15/2023',
-      'stage': 'Finished',
-    },
-    {
-      'title': 'Gojek Lite',
-      'updated': '3/15/2023',
-      'stage': 'Archived',
-    },
-    {
-      'title': 'E-Commerce',
-      'updated': '3/15/2023',
-      'stage': 'Draft',
-    },
-    {
-      'title': 'Travel App',
-      'updated': '3/15/2023',
-      'stage': 'Finished',
-    },
-    {
-      'title': 'Food Delivery App',
-      'updated': '3/18/2023',
+      'title': 'Mobile Payment App',
+      'updated': '4/18/2023',
       'stage': 'In Progress',
+    },
+    {
+      'title': 'E-commerce Platform',
+      'updated': '2/10/2023',
+      'stage': 'Finished',
+    },
+    {
+      'title': 'Legacy CRM System',
+      'updated': '1/05/2023',
+      'stage': 'Archived',
     },
   ];
 
@@ -73,37 +64,38 @@ class _PrdListScreenState extends State<PrdListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // Get the current theme
+    final textTheme = theme.textTheme; // Get the text theme
+
     return Scaffold(
       body: Column(
         children: [
-          // Search field
+          // Title and Search field
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Removed "Product Requirement Documents" heading
-                
+                // Screen Title
+                ScreenTitleWidget(
+                  title: 'Product Requirement Documents',
+                  subtitle: 'Manage and view all PRDs',
+                ),
+                const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(25),
                   ),
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Search PRDs...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              icon: Icon(Icons.clear, color: Colors.grey[500], size: 18),
                               onPressed: () {
                                 setState(() {
                                   _searchController.clear();
@@ -114,7 +106,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 12,
+                        vertical: 10,
                       ),
                     ),
                     onChanged: (value) {
@@ -125,14 +117,14 @@ class _PrdListScreenState extends State<PrdListScreen> {
                 const SizedBox(height: 16),
                 // Filter chips
                 SizedBox(
-                  height: 40,
+                  height: 38,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _filters.length,
                     itemBuilder: (context, index) {
                       final filter = _filters[index];
                       final isSelected = _selectedFilter == filter;
-                      
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FilterChip(
@@ -143,14 +135,19 @@ class _PrdListScreenState extends State<PrdListScreen> {
                               _selectedFilter = selected ? filter : 'All Stage';
                             });
                           },
-                          backgroundColor: Colors.white,
-                          selectedColor: Theme.of(context).primaryColor.withAlpha(30),
-                          checkmarkColor: Theme.of(context).primaryColor,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Theme.of(context).primaryColor : Colors.black,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          backgroundColor: Colors.transparent,
+                          side: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.grey.shade300),
+                          selectedColor: theme.colorScheme.primary.withOpacity(0.12),
+                          checkmarkColor: theme.colorScheme.primary,
+                          visualDensity: VisualDensity.compact,
+                          labelStyle: textTheme.labelMedium?.copyWith(
+                            color: isSelected ? theme.colorScheme.primary : Colors.grey[700],
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       );
                     },
@@ -181,19 +178,22 @@ class _PrdListScreenState extends State<PrdListScreen> {
                         ? const Center(
                             child: Text('No PRDs found'),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             itemCount: _filteredPrds.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              indent: 72,
+                              color: Colors.grey.shade200,
+                            ),
                             itemBuilder: (context, index) {
                               final prd = _filteredPrds[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: _buildPrdItem(
-                                  context,
-                                  prd['title'],
-                                  'Updated: ${prd['updated']}',
-                                  prd['stage'],
-                                ),
+                              return _buildPrdItem(
+                                context,
+                                prd['title'],
+                                'Updated: ${prd['updated']}',
+                                prd['stage'],
                               );
                             },
                           ),
@@ -209,8 +209,8 @@ class _PrdListScreenState extends State<PrdListScreen> {
             MaterialPageRoute(builder: (context) => const PrdFormScreen()),
           );
         },
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: theme.colorScheme.primary, // Use primary color from theme
+        child: const Icon(Icons.add, color: Colors.white), // Keep white icon
       ),
     );
   }
@@ -221,24 +221,10 @@ class _PrdListScreenState extends State<PrdListScreen> {
     String subtitle,
     String stage,
   ) {
-    Color stageColor;
-    
-    switch (stage) {
-      case 'Draft':
-        stageColor = Colors.amber;
-        break;
-      case 'In Progress':
-        stageColor = Colors.orange;
-        break;
-      case 'Finished':
-        stageColor = Colors.green;
-        break;
-      case 'Archived':
-        stageColor = Colors.blue;
-        break;
-      default:
-        stageColor = Colors.grey;
-    }
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final primaryColor = theme.colorScheme.primary;
+    Color stageColor = AppTheme.badgeColors[stage] ?? Colors.grey;
 
     return InkWell(
       onTap: () {
@@ -249,64 +235,70 @@ class _PrdListScreenState extends State<PrdListScreen> {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      splashColor: theme.colorScheme.primary.withOpacity(0.1),
+      highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Row(
           children: [
+            CircleAvatar(
+              backgroundColor: primaryColor.withOpacity(0.1),
+              radius: 20,
+              child: Icon(
+                Icons.description,
+                color: primaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: stageColor.withAlpha(30),
-                borderRadius: BorderRadius.circular(20),
+                color: stageColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 stage,
-                style: TextStyle(
+                style: textTheme.bodySmall?.copyWith(
                   color: stageColor,
                   fontWeight: FontWeight.w500,
-                  fontSize: 12,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.more_vert),
+              icon: Icon(
+                Icons.more_vert,
+                color: Colors.grey.shade600,
+                size: 20,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              splashRadius: 24,
               onPressed: () {
-                _showOptionsBottomSheet(context, title);
+                _showOptionsMenu(context, title, stage);
               },
             ),
           ],
@@ -314,14 +306,52 @@ class _PrdListScreenState extends State<PrdListScreen> {
       ),
     );
   }
+  
+  void _showConfirmationDialog(
+    BuildContext context,
+    String title,
+    String message,
+    VoidCallback onConfirm,
+  ) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+            ),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onConfirm();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: primaryColor,
+            ),
+            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
-  void _showOptionsBottomSheet(BuildContext context, String prdTitle) {
-    // Get the current stage of the PRD
-    final prd = _prds.firstWhere((p) => p['title'] == prdTitle);
-    final currentStage = prd['stage'] as String;
+  void _showOptionsMenu(BuildContext context, String title, String stage) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -331,153 +361,83 @@ class _PrdListScreenState extends State<PrdListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               ListTile(
-                leading: Icon(Icons.edit, color: Theme.of(context).primaryColor),
-                title: const Text('Edit PRD'),
+                title: const Text('View Details'),
                 onTap: () {
                   Navigator.pop(context);
-                  
-                  // Use the new PrdEditScreen instead of PrdFormScreen
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PrdEditScreen(
-                        prdData: {
-                          'title': prdTitle,
-                          'version': '0.8.2',
-                          'owner': 'Maha',
-                          'stage': prd['stage'],
-                          'startDate': '2025-01-01',
-                          'endDate': '2025-12-31',
-                          'overview': 'This is a project overview for $prdTitle. It describes the purpose, goals, and scope of the project.',
-                          'problemStatements': 'The current system has several limitations:\n\n'
-                              '1. Performance issues with large datasets\n'
-                              '2. Limited mobile support\n'
-                              '3. Lack of integration with other systems\n'
-                              '4. Poor user experience',
-                          'objectives': '1. Improve system performance by 50%\n'
-                              '2. Develop a responsive mobile interface\n'
-                              '3. Implement API integrations with key systems\n'
-                              '4. Redesign the user interface for better UX',
-                          'stakeholders': ['John Doe', 'Jane Smith'],
-                          'developers': ['Mustafa Fathur Rahman', 'Fulana'],
-                          'darci': {
-                            'decisionMaker': 'John Doe',
-                            'accountable': 'Jane Smith',
-                            'responsible': ['Development Team'],
-                            'consulted': ['UX Team', 'QA Team'],
-                            'informed': ['Stakeholders'],
-                          },
-                          'successMetrics': '1. 50% improvement in system performance\n'
-                              '2. 30% increase in mobile usage\n'
-                              '3. 25% reduction in support tickets\n'
-                              '4. 90% user satisfaction rating',
-                          'timeline': 'January 1, 2025: Project Kickoff\n\n'
-                              'January 15, 2025: Requirements Finalization\n\n'
-                              'February 1, 2025: Design Phase Completion\n\n'
-                              'March 1, 2025: Development Phase Completion\n\n'
-                              'March 15, 2025: Testing Phase\n\n'
-                              'April 1, 2025: Project Launch',
-                        },
-                      ),
+                      builder: (context) => PrdDetailScreen(title: title),
                     ),
-                  ).then((updatedData) {
-                    if (updatedData != null && mounted) {
-                      // Update the PRD with the new data
-                      setState(() {
-                        // Find and update the PRD in the list
-                        final index = _prds.indexWhere((p) => p['title'] == prdTitle);
-                        if (index != -1) {
-                          // Update basic fields
-                          _prds[index]['title'] = updatedData['title'];
-                          _prds[index]['stage'] = updatedData['stage'];
-                          _prds[index]['updated'] = DateFormat('MM/dd/yyyy').format(DateTime.now());
-                        }
-                        
-                        // When returning from edit screen, update stage to In Progress if it was Draft
-                        if (currentStage == 'Draft') {
-                          prd['stage'] = 'In Progress';
-                        }
-                      });
-                    }
-                  });
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.download, color: Theme.of(context).primaryColor),
-                title: const Text('Download PRD'),
-                onTap: () {
-                  Navigator.pop(context);
-                  
-                  // Update stage to Finished when downloading
-                  setState(() {
-                    prd['stage'] = 'Finished';
-                  });
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Downloading PRD...')),
                   );
                 },
               ),
               ListTile(
-                leading: Icon(Icons.archive, color: Theme.of(context).primaryColor),
+                title: const Text('Edit PRD'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => PrdEditScreen(
+                        prdData: {'title': title, 'stage': stage},
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
                 title: const Text('Archive PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  // Update the PRD stage to 'Archived'
-                  setState(() {
-                    prd['stage'] = 'Archived';
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('PRD archived')),
+                  _showConfirmationDialog(
+                    context, 
+                    'Archive PRD', 
+                    'Are you sure you want to archive "$title"?',
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$title archived'),
+                          backgroundColor: primaryColor,
+                        ),
+                      );
+                    },
                   );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Delete PRD', style: TextStyle(color: Colors.red)),
+                title: const Text('Delete PRD'),
                 onTap: () {
                   Navigator.pop(context);
-                  _showDeleteConfirmationDialog(context, prdTitle);
+                  _showConfirmationDialog(
+                    context, 
+                    'Delete PRD', 
+                    'Are you sure you want to delete "$title"? This action cannot be undone.',
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$title deleted'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirmationDialog(BuildContext context, String prdTitle) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete PRD'),
-          content: Text('Are you sure you want to delete "$prdTitle"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _prds.removeWhere((prd) => prd['title'] == prdTitle);
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PRD deleted'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
         );
       },
     );

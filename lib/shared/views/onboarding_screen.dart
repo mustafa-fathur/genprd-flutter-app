@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/auth/views/login_screen.dart';
 import 'package:genprd/shared/widgets/primary_button.dart';
+import 'package:genprd/shared/config/themes/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -15,19 +16,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   
   final List<Map<String, dynamic>> _onboardingData = [
     {
-      'title': 'Create PRDs Easily',
-      'description': 'Create professional Product Requirement Documents with just a few clicks',
+      'title': 'Create Professional PRDs',
+      'description': 'Generate comprehensive Product Requirement Documents with AI assistance',
       'icon': Icons.description,
     },
     {
-      'title': 'Collaborate with Team',
-      'description': 'Share your PRDs with your team and collaborate in real-time',
-      'icon': Icons.people,
+      'title': 'AI-Powered Generation',
+      'description': 'Let AI hep you draft, refine, and format your product requirement',
+      'icon': Icons.auto_awesome,
     },
     {
-      'title': 'AI-Powered Assistance',
-      'description': 'Get AI-powered suggestions to improve your PRDs',
-      'icon': Icons.smart_toy,
+      'title': 'Adjust Productivity',
+      'description': 'Adjust your productivity as a project manager by easily creating prd and delivery',
+      'icon': Icons.people,
     },
   ];
 
@@ -47,6 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -57,7 +59,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: TextButton(
                   onPressed: _navigateToLogin,
-                  child: const Text('Skip'),
+                  child: Text(
+                    'Skip',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
                 ),
               ),
             ),
@@ -94,8 +101,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey.shade300,
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ),
@@ -128,7 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildOnboardingPage(String title, String description, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 48.0), 
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -136,13 +143,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withAlpha(30),
-              borderRadius: BorderRadius.circular(20),
+              shape: BoxShape.circle,
+              color: Theme.of(context).colorScheme.secondary,
             ),
             child: Icon(
               icon,
               size: 60,
-              color: Theme.of(context).primaryColor,
+              color: AppTheme.primaryColor,
             ),
           ),
           const SizedBox(height: 40),

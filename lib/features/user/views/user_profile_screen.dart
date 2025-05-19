@@ -1,108 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/auth/views/login_screen.dart';
+import 'package:genprd/shared/config/themes/app_theme.dart'; // Import AppTheme
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // Get the current theme
+    final textTheme = theme.textTheme; // Get the text theme
+
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Profile & Settings'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-            // Profile picture
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: AssetImage(
-                'assets/images/profile.jpg',
-              ),
+            // User Info Section (formerly User Info Card)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Profile picture with blue circular background
+                Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 179),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 60, // Increased avatar size
+                    backgroundImage: AssetImage(
+                      'assets/images/profile.jpg',
+                    ),
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+                const SizedBox(height: 24), // Increased spacing
+                // User info
+                Text(
+                  'Mustafa Fathur',
+                  style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold), // Using a larger text style
+                ),
+                const SizedBox(height: 8), // Increased spacing
+                // Email
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondary.withValues(alpha: 150), // Using secondary color with transparency
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'mustafa.fathur@gmail.com',
+                    style: textTheme.bodyLarge?.copyWith(color: theme.colorScheme.primary), // Using a larger text style
+                  ),
+                ),
+                const SizedBox(height: 12), // Increased spacing
+                Text(
+                  'Member since: January 2025',
+                  style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant), // Using a slightly larger text style
+                ),
+                const SizedBox(height: 32), // Increased spacing
+              ],
             ),
-            const SizedBox(height: 20),
-            // User info
-            const Text(
-              'Mustafa Fathur',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Text(
-              'mustafa.fathur@gmail.com',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const Text(
-              'Member since: January 2025',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            // Settings
+
+            // Settings List (formerly Settings Card)
             _buildSettingsItem(
               context,
-              'Privacy Policy',
-              Icons.privacy_tip_outlined,
-              () {
-                // Navigate to privacy policy
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Privacy Policy')),
-                );
-              },
+              'Edit Profile',
+              Icons.edit_outlined,
+              () {},
             ),
-            _buildDivider(),
-            
+            _buildDivider(context),
+
             _buildSettingsItem(
               context,
-              'Help & Support',
-              Icons.help_outline,
-              () {
-                // Navigate to help & support
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Help & Support')),
-                );
-              },
+              'Add Pin',
+              Icons.lock_outlined,
+              () {},
             ),
-            _buildDivider(),
-            
+            _buildDivider(context),
+
+            _buildSettingsItem(
+              context,
+              'Settings',
+              Icons.settings_outlined,
+              () {},
+            ),
+             _buildDivider(context),
+
+             _buildSettingsItem(
+              context,
+              'Invite a friend',
+              Icons.person_add_alt_1_outlined,
+              () {},
+            ),
+            _buildDivider(context),
+
             _buildSettingsItem(
               context,
               'Logout',
               Icons.logout,
               () {
-                // Show logout confirmation
                 _showLogoutConfirmationDialog(context);
               },
               isDestructive: true,
             ),
-            
+
             const SizedBox(height: 40),
             // App info
-            const Text(
-              'GenPRD v1.0',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            const Text(
-              'All rights reserved.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    'GenPRD v1.0',
+                    style: textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  Text(
+                    'All rights reserved.',
+                    style: textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
               ),
             ),
           ],
@@ -118,29 +144,31 @@ class UserProfileScreen extends StatelessWidget {
     VoidCallback onTap, {
     bool isDestructive = false,
   }) {
+    final theme = Theme.of(context); // Get theme for color
     return ListTile(
       leading: Icon(
         icon,
-        color: isDestructive ? Colors.red : Colors.grey[600],
+        color: isDestructive ? Colors.red : theme.colorScheme.onSurfaceVariant,
       ),
       title: Text(
         title,
         style: TextStyle(
-          color: isDestructive ? Colors.red : Colors.black,
+          color: isDestructive ? Colors.red : theme.textTheme.bodyMedium?.color,
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+      trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 102)), // Use themed color with some transparency
       onTap: onTap,
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
+    final theme = Theme.of(context); // Get theme for color
     return Divider(
-      color: Colors.grey[200],
-      thickness: 1,
-      indent: 70,
-      endIndent: 20,
+      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 77), // Use themed color with transparency
+      thickness: 0.5,
+      indent: 64,
+      endIndent: 16,
     );
   }
 
