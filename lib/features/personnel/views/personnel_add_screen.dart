@@ -5,9 +5,9 @@ class PersonnelAddScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
 
   const PersonnelAddScreen({
-    Key? key,
+    super.key,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   State<PersonnelAddScreen> createState() => _PersonnelAddScreenState();

@@ -6,9 +6,9 @@ class PersonnelDetailScreen extends StatelessWidget {
   final Map<String, dynamic> person;
 
   const PersonnelDetailScreen({
-    Key? key,
+    super.key,
     required this.person,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

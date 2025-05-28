@@ -5,9 +5,9 @@ class PersonnelEditScreen extends StatefulWidget {
   final Map<String, dynamic> person;
 
   const PersonnelEditScreen({
-    Key? key,
+    super.key,
     required this.person,
-  }) : super(key: key);
+  });
 
   @override
   State<PersonnelEditScreen> createState() => _PersonnelEditScreenState();
