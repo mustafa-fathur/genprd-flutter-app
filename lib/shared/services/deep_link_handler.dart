@@ -15,42 +15,36 @@ class DeepLinkHandler {
     if (!_initialUriHandled) {
       _initialUriHandled = true;
       try {
+        // Perubahan ini untuk mengatasi perubahan API di package app_links
         final initialUri = await _appLinks.getInitialLink();
-        debugPrint("Deep Link - Initial URI: $initialUri");
         if (initialUri != null) {
+          debugPrint('Got initial link: ${initialUri.toString()}');
           _handleDeepLink(initialUri, onAuthCallback);
         }
       } catch (e) {
-        debugPrint("Deep Link - Error getting initial URI: $e");
+        debugPrint('Error getting initial link: $e');
       }
     }
 
     // Listen for deep link changes while the app is running
-    _subscription = _appLinks.uriLinkStream.listen(
-          (Uri uri) {
-        debugPrint("Deep Link - URI received: $uri");
-        _handleDeepLink(uri, onAuthCallback);
-      },
-      onError: (err) {
-        debugPrint("Deep Link - URI stream error: $err");
-      },
-    );
+    _subscription = _appLinks.uriLinkStream.listen((uri) {
+      debugPrint('Got app link while app was running: ${uri.toString()}');
+      _handleDeepLink(uri, onAuthCallback);
+    }, onError: (e) => debugPrint('Deep link error: $e'));
   }
 
   static void _handleDeepLink(Uri uri, AuthCallbackHandler onAuthCallback) {
     try {
-      debugPrint("Deep Link - Processing URI: $uri");
-
-      if (uri.scheme == ApiConfig.appScheme &&
-          uri.path.contains(ApiConfig.callbackPath)) {
-        debugPrint("Deep Link - Auth callback detected");
-
-        final params = Map<String, String>.from(uri.queryParameters);
-
+      debugPrint('Processing deep link: $uri');
+      // Cek apakah ini adalah callback auth
+      if (uri.scheme == ApiConfig.appScheme) {
+        // Parse query parameters
+        final params = uri.queryParameters;
+        debugPrint('Deep link params: $params');
         onAuthCallback(params);
       }
     } catch (e) {
-      debugPrint("Deep Link - Error processing URI: $e");
+      debugPrint('Error handling deep link: $e');
     }
   }
 

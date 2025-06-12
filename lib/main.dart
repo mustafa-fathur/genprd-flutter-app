@@ -8,7 +8,7 @@ import 'package:genprd/shared/services/deep_link_handler.dart';
 void main() {
   // Ensure Flutter is initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   runApp(const MyApp());
 }
 
@@ -26,20 +26,23 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize authentication state
-    _authProvider.initAuth();
-    
-    // Set up deep link handling
-    _setupDeepLinks();
-  }
-  
-  // Initialize deep link handler to process OAuth callbacks
-  Future<void> _setupDeepLinks() async {
-    DeepLinkHandler.init((params) {
-      debugPrint('Deep link callback received with params: $params');
-      _authProvider.processAuthCallback(params);
+    _authProvider.initAuth().catchError((e) {
+      debugPrint('Error initializing auth: $e');
     });
+
+    // Initialize deep link handler with error handling
+    try {
+      DeepLinkHandler.init((params) {
+        debugPrint('Auth callback received: $params');
+        _authProvider.processAuthCallback(params).catchError((e) {
+          debugPrint('Error processing auth callback: $e');
+        });
+      });
+    } catch (e) {
+      debugPrint('Error initializing deep link handler: $e');
+    }
   }
 
   @override

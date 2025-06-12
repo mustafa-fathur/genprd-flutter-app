@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/auth/views/login_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart'; // Import AppTheme
+import 'package:provider/provider.dart'; // Import Provider
+import 'package:genprd/features/auth/controllers/auth_provider.dart'; // Import AuthProvider
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
@@ -34,13 +36,13 @@ class UserProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(4.0),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 179),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withValues(alpha: 179),
                   ),
                   child: const CircleAvatar(
                     radius: 60, // Increased avatar size
-                    backgroundImage: AssetImage(
-                      'assets/images/profile.jpg',
-                    ),
+                    backgroundImage: AssetImage('assets/images/profile.jpg'),
                     backgroundColor: Colors.transparent,
                   ),
                 ),
@@ -48,25 +50,36 @@ class UserProfileScreen extends StatelessWidget {
                 // User info
                 Text(
                   'Mustafa Fathur',
-                  style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold), // Using a larger text style
+                  style: textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ), // Using a larger text style
                 ),
                 const SizedBox(height: 8), // Increased spacing
                 // Email
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary.withValues(alpha: 150), // Using secondary color with transparency
+                    color: theme.colorScheme.secondary.withValues(
+                      alpha: 150,
+                    ), // Using secondary color with transparency
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     'mustafa.fathur@gmail.com',
-                    style: textTheme.bodyLarge?.copyWith(color: theme.colorScheme.primary), // Using a larger text style
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ), // Using a larger text style
                   ),
                 ),
                 const SizedBox(height: 12), // Increased spacing
                 Text(
                   'Member since: January 2025',
-                  style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant), // Using a slightly larger text style
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ), // Using a slightly larger text style
                 ),
                 const SizedBox(height: 32), // Increased spacing
               ],
@@ -81,12 +94,7 @@ class UserProfileScreen extends StatelessWidget {
             ),
             _buildDivider(context),
 
-            _buildSettingsItem(
-              context,
-              'Add Pin',
-              Icons.lock_outlined,
-              () {},
-            ),
+            _buildSettingsItem(context, 'Add Pin', Icons.lock_outlined, () {}),
             _buildDivider(context),
 
             _buildSettingsItem(
@@ -95,9 +103,9 @@ class UserProfileScreen extends StatelessWidget {
               Icons.settings_outlined,
               () {},
             ),
-             _buildDivider(context),
+            _buildDivider(context),
 
-             _buildSettingsItem(
+            _buildSettingsItem(
               context,
               'Invite a friend',
               Icons.person_add_alt_1_outlined,
@@ -105,15 +113,9 @@ class UserProfileScreen extends StatelessWidget {
             ),
             _buildDivider(context),
 
-            _buildSettingsItem(
-              context,
-              'Logout',
-              Icons.logout,
-              () {
-                _showLogoutConfirmationDialog(context);
-              },
-              isDestructive: true,
-            ),
+            _buildSettingsItem(context, 'Logout', Icons.logout, () {
+              _showLogoutConfirmationDialog(context);
+            }, isDestructive: true),
 
             const SizedBox(height: 40),
             // App info
@@ -122,11 +124,15 @@ class UserProfileScreen extends StatelessWidget {
                 children: [
                   Text(
                     'GenPRD v1.0',
-                    style: textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     'All rights reserved.',
-                    style: textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -157,7 +163,10 @@ class UserProfileScreen extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 102)), // Use themed color with some transparency
+      trailing: Icon(
+        Icons.chevron_right,
+        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 102),
+      ), // Use themed color with some transparency
       onTap: onTap,
     );
   }
@@ -165,7 +174,9 @@ class UserProfileScreen extends StatelessWidget {
   Widget _buildDivider(BuildContext context) {
     final theme = Theme.of(context); // Get theme for color
     return Divider(
-      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 77), // Use themed color with transparency
+      color: theme.colorScheme.onSurfaceVariant.withValues(
+        alpha: 77,
+      ), // Use themed color with transparency
       thickness: 0.5,
       indent: 64,
       endIndent: 16,
@@ -187,13 +198,25 @@ class UserProfileScreen extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Logout and navigate to login screen
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
+              onPressed: () async {
+                Navigator.pop(context); // Close the dialog first
+
+                // Get auth provider and call logout
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
                 );
+                await authProvider.logout();
+
+                // Navigate to login screen and remove all previous routes
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
               },
               child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),

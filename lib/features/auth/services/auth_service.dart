@@ -2,137 +2,423 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:genprd/shared/config/api_config.dart';
-import 'package:genprd/shared/services/api_client.dart';
 import 'package:genprd/shared/services/token_storage.dart';
 import 'package:genprd/features/user/models/user_model.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 
 class AuthService {
-  final ApiClient _apiClient = ApiClient();
-  
-  // Sign in with Google OAuth
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // clientId tidak bekerja di Android, gunakan serverClientId
+    serverClientId:
+        '418864732285-cj9knn4bngfn1ra00j32t5njanfvtebg.apps.googleusercontent.com',
+  ); // Sign in with Google OAuth URL Launcher
   Future<void> signInWithGoogle() async {
     try {
-      // Build the Google auth URL with callback
-      final encodedCallback = Uri.encodeComponent(ApiConfig.callbackUrl);
-      final googleAuthUrl = '${ApiConfig.baseUrl}${ApiConfig.googleAuthMobile}?redirect_uri=$encodedCallback';
-      final uri = Uri.parse(googleAuthUrl);
-      
-      debugPrint('Opening Google Auth URL: $googleAuthUrl');
-      
-      // Check if URL can be launched
+      // The backend initiates the Google OAuth flow, and it will handle the redirect_uri to Google.
+      // After Google auth, the backend will redirect to our app's deep link (ApiConfig.callbackUrl).
+      final googleAuthInitiationUrl =
+          '${ApiConfig.baseUrl}${ApiConfig.googleAuthMobile}';
+      final uri = Uri.parse(googleAuthInitiationUrl);
+
+      debugPrint(
+        'Opening Backend Google Auth Initiation URL: $googleAuthInitiationUrl',
+      );
+      debugPrint('Expected app callback URL: ${ApiConfig.callbackUrl}');
+
+      // Log diagnostic info about URL launching
+      await _logUrlLaunchDetails(uri);
+
+      // First attempt with inAppWebView (keeps the user in the app)
+      try {
+        if (await canLaunchUrl(uri)) {
+          final launched = await launchUrl(
+            uri,
+            mode: LaunchMode.inAppWebView,
+            webOnlyWindowName: '_self',
+            webViewConfiguration: const WebViewConfiguration(
+              enableJavaScript: true,
+              enableDomStorage: true,
+            ),
+          );
+
+          if (launched) {
+            debugPrint('URL launched successfully with inAppWebView mode');
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error launching with inAppWebView: $e');
+      }
+
+      // Second attempt with externalApplication (opens in system browser)
+      try {
+        if (await canLaunchUrl(uri)) {
+          final launched = await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+            webOnlyWindowName: '_self',
+          );
+
+          if (launched) {
+            debugPrint(
+              'URL launched successfully with externalApplication mode',
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error launching with externalApplication: $e');
+      }
+
+      // Last resort: platformDefault
       if (await canLaunchUrl(uri)) {
-        // Try to launch URL in external browser
         final launched = await launchUrl(
-          uri, 
-          mode: LaunchMode.externalApplication,
+          uri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_self',
         );
-        
+
         if (!launched) {
-          throw Exception('Could not launch Google authentication URL');
+          throw Exception(
+            'All URL launch attempts failed for: $googleAuthInitiationUrl',
+          );
         }
       } else {
-        throw Exception('Cannot handle URL: $googleAuthUrl');
+        // If the URL can't be launched, try a direct API call
+        debugPrint('Cannot launch URL, attempting direct API call');
+        await _tryDirectNativeSignIn();
       }
     } catch (e) {
       debugPrint('Error launching Google Auth: $e');
       rethrow;
     }
   }
-  
-  // Process OAuth callback data
-  Future<User> processAuthCallback(Map<String, String> params) async {
+
+  // Helper method to attempt direct native sign-in as a fallback
+  Future<void> _tryDirectNativeSignIn() async {
+    try {
+      await signInWithGoogleNative();
+    } catch (e) {
+      debugPrint('Direct native sign-in also failed: $e');
+      throw Exception(
+        'All authentication methods failed. Please check your internet connection and try again.',
+      );
+    }
+  }
+
+  // Sign in with native Google Sign In
+  Future<void> signInWithGoogleNative() async {
+    try {
+      debugPrint('Starting native Google Sign In flow...');
+
+      // [COMMENTED OUT] Make sure Google Play Services is available
+      // final bool isPlayServicesAvailable = await _googleSignIn.canAccessScopes([
+      //   'email',
+      // ]);
+      // if (!isPlayServicesAvailable) {
+      //   debugPrint('Google Play Services not available, trying web fallback');
+      //   await signInWithGoogle();
+      //   return;
+      // }
+
+      // Sign out first to avoid inconsistent state
+      await _googleSignIn.signOut();
+
+      // Try interactive sign in
+      debugPrint('Attempting interactive sign in...');
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+
+      if (account == null) {
+        debugPrint('Sign in cancelled by user');
+        throw Exception('Google Sign In canceled');
+      }
+
+      debugPrint(
+        'Sign in successful: ${account.displayName} (${account.email})',
+      );
+      await _processGoogleAccount(account);
+    } catch (e) {
+      // Detailed error handling
+      if (e.toString().contains('ApiException: 10')) {
+        debugPrint(
+          'Error code 10: This is a SHA-1 or package name configuration issue',
+        );
+        debugPrint(
+          'Make sure SHA-1 and package name are registered in Google Cloud Console',
+        );
+
+        // Try web approach as fallback
+        debugPrint('Trying web approach as fallback...');
+        await signInWithGoogle();
+        return;
+      } else if (e.toString().contains('network_error') ||
+          e.toString().contains('socket') ||
+          e.toString().contains('connection')) {
+        debugPrint('Network error detected during Google Sign In');
+        throw Exception(
+          'Network error. Please check your internet connection and try again.',
+        );
+      }
+
+      debugPrint('Google Sign In error: $e');
+      rethrow;
+    }
+  }
+
+  // Helper method for processing Google account after sign in
+  Future<void> _processGoogleAccount(GoogleSignInAccount account) async {
+    debugPrint('Signed in as: ${account.displayName} (${account.email})');
+    debugPrint('User ID: ${account.id}');
+
+    final GoogleSignInAuthentication googleAuth = await account.authentication;
+
+    debugPrint('Got token: ${googleAuth.accessToken != null}');
+
+    // Send token to backend for verification
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.googleAuthVerify}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'id_token': googleAuth.idToken,
+        'access_token': googleAuth.accessToken,
+      }),
+    );
+
+    debugPrint('Backend response status: ${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Authentication failed: ${response.body}');
+    }
+
+    // Parse response
+    final responseData = jsonDecode(response.body);
+
+    // Save authentication data
+    await TokenStorage.saveAccessToken(responseData['access_token']);
+
+    if (responseData['refresh_token'] != null) {
+      await TokenStorage.saveRefreshToken(responseData['refresh_token']);
+    }
+
+    debugPrint('Authentication successful');
+  }
+
+  // Get user profile
+  Future<User?> getUserProfile() async {
+    try {
+      // Implementasi untuk mendapatkan profil user dari backend atau local storage
+      final userData = await TokenStorage.getUserData();
+      if (userData == null) {
+        return null;
+      }
+
+      return User.fromJson(userData);
+    } catch (e) {
+      debugPrint('Error getting user profile: $e');
+      return null;
+    }
+  }
+
+  // Check if user is authenticated
+  Future<bool> isAuthenticated() async {
+    try {
+      final accessToken = await TokenStorage.getAccessToken();
+      return accessToken != null;
+    } catch (e) {
+      debugPrint('Error checking authentication: $e');
+      return false;
+    }
+  }
+
+  // Process auth callback
+  Future<User?> processAuthCallback(Map<String, String> params) async {
     try {
       debugPrint('Processing auth callback with params: $params');
-      
-      if (params['token'] == null) {
-        throw Exception('No token received in callback');
+
+      // Handle token under different possible parameter names
+      String? token;
+      DateTime? expiresAt;
+
+      // Check various possible token parameter names
+      final possibleTokenKeys = [
+        'token',
+        'access_token',
+        'id_token',
+        'auth_token',
+      ];
+      for (final key in possibleTokenKeys) {
+        if (params.containsKey(key) && params[key]!.isNotEmpty) {
+          token = params[key];
+          debugPrint('Found token under key: $key');
+          break;
+        }
       }
-      
-      // Save the access token
-      await TokenStorage.saveAccessToken(params['token']!);
-      
-      // Save refresh token if available
-      if (params['refreshToken'] != null) {
-        await TokenStorage.saveRefreshToken(params['refreshToken']!);
+
+      // Check for expiry
+      if (params.containsKey('expires_in')) {
+        final expiresIn = int.tryParse(params['expires_in'] ?? '');
+        if (expiresIn != null) {
+          expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+        }
       }
-      
-      // Parse and save user data
-      if (params['user'] != null) {
-        final userData = jsonDecode(params['user']!) as Map<String, dynamic>;
-        await TokenStorage.saveUserData(userData);
-        return User.fromJson(userData);
+
+      // If we found a token, save it
+      if (token != null && token.isNotEmpty) {
+        await TokenStorage.saveAccessToken(token, expiresAt: expiresAt);
+        debugPrint('Saved access token successfully');
+
+        // Check for refresh token under different possible names
+        final possibleRefreshTokenKeys = ['refresh_token', 'refreshToken'];
+        for (final key in possibleRefreshTokenKeys) {
+          if (params.containsKey(key) && params[key]!.isNotEmpty) {
+            await TokenStorage.saveRefreshToken(params[key]!);
+            debugPrint('Saved refresh token successfully');
+            break;
+          }
+        }
+
+        // Handle user data under different possible parameter names
+        Map<String, dynamic>? userData;
+
+        // Try to find user data in params
+        final possibleUserDataKeys = ['user_data', 'userData', 'user'];
+        for (final key in possibleUserDataKeys) {
+          if (params.containsKey(key) && params[key]!.isNotEmpty) {
+            try {
+              userData = jsonDecode(params[key]!) as Map<String, dynamic>;
+              debugPrint('Found user data under key: $key');
+              break;
+            } catch (e) {
+              debugPrint('Error parsing user data for key $key: $e');
+            }
+          }
+        }
+
+        // Save and return user data if we found it
+        if (userData != null) {
+          await TokenStorage.saveUserData(userData);
+          debugPrint('Saved user data successfully');
+          return User.fromJson(userData);
+        }
+
+        // If we didn't find user data in the params, fetch it from the API
+        debugPrint('No user data in params, fetching profile from API');
+        return await getUserProfile();
       } else {
-        // If user data not included in callback, fetch it from API
-        final userData = await getUserProfile();
-        return userData;
+        // If there's an error parameter, log it
+        if (params.containsKey('error')) {
+          debugPrint('Auth error from callback: ${params['error']}');
+          if (params.containsKey('error_description')) {
+            debugPrint('Error description: ${params['error_description']}');
+          }
+        }
+
+        debugPrint('No valid token found in callback parameters');
+        return null;
       }
     } catch (e) {
       debugPrint('Error processing auth callback: $e');
-      await TokenStorage.clearAll(); // Clear any partial data on error
-      rethrow;
+      return null;
     }
   }
-  
-  // Refresh access token
-  Future<String> refreshToken() async {
+
+  // Refresh token
+  Future<bool> refreshToken() async {
     try {
+      debugPrint('Attempting to refresh token...');
       final refreshToken = await TokenStorage.getRefreshToken();
-      
+
       if (refreshToken == null) {
-        throw Exception('No refresh token available');
+        debugPrint('No refresh token available');
+        return false;
       }
-      
-      final response = await _apiClient.post(
-        ApiConfig.refreshToken,
-        body: {'refreshToken': refreshToken},
-        requiresAuth: false,
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.refreshToken}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
       );
-      
-      final newToken = response['token'];
-      await TokenStorage.saveAccessToken(newToken);
-      
-      return newToken;
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final newAccessToken = responseData['access_token'];
+        DateTime? newExpiresAt;
+
+        if (responseData['expires_in'] != null) {
+          final expiresIn = int.tryParse(responseData['expires_in'].toString());
+          if (expiresIn != null) {
+            newExpiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+          }
+        }
+
+        await TokenStorage.saveAccessToken(
+          newAccessToken,
+          expiresAt: newExpiresAt,
+        );
+        debugPrint('Token refreshed successfully');
+        return true;
+      } else {
+        debugPrint('Token refresh failed: ${response.body}');
+        return false;
+      }
     } catch (e) {
       debugPrint('Error refreshing token: $e');
-      await logout(); // Logout on refresh failure
-      rethrow;
+      return false;
     }
   }
-  
-  // Get current user's profile from the API
-  Future<User> getUserProfile() async {
-    try {
-      final response = await _apiClient.get('/users/profile');
-      final userData = response['user'] ?? response;
-      
-      // Save latest user data
-      await TokenStorage.saveUserData(userData);
-      
-      return User.fromJson(userData);
-    } catch (e) {
-      debugPrint('Error fetching user profile: $e');
-      rethrow;
-    }
-  }
-  
-  // Check if user is authenticated
-  Future<bool> isAuthenticated() async {
-    return await TokenStorage.isAuthenticated();
-  }
-  
-  // Logout user
+
+  // Logout
   Future<void> logout() async {
     try {
-      // Call logout API if authenticated
-      if (await isAuthenticated()) {
-        await _apiClient.post(ApiConfig.logout);
-      }
+      // Sign out dari Google
+      await _googleSignIn.signOut();
+
+      // Hapus token
+      await TokenStorage.clearTokens();
+
+      debugPrint('Logged out successfully');
     } catch (e) {
-      debugPrint('Error during logout API call: $e');
-      // Continue with local logout even if API call fails
-    } finally {
-      // Always clear local auth data
-      await TokenStorage.clearAll();
+      debugPrint('Error during logout: $e');
+      rethrow;
+    }
+  }
+
+  // Diagnostic helper for URL launching
+  Future<void> _logUrlLaunchDetails(Uri uri) async {
+    try {
+      debugPrint('==== URL LAUNCH DIAGNOSTICS ====');
+      debugPrint('URL to launch: $uri');
+      debugPrint('Can launch URL: ${await canLaunchUrl(uri)}');
+
+      // Check supported URL schemes
+      final schemes = [
+        'http',
+        'https',
+        'tel',
+        'mailto',
+        'sms',
+        'file',
+        'genprd',
+      ];
+      for (final scheme in schemes) {
+        final testUri = Uri.parse('$scheme://example.com');
+        final canLaunch = await canLaunchUrl(testUri);
+        debugPrint('Can launch $scheme scheme: $canLaunch');
+      }
+
+      // Check app package name
+      debugPrint('Package name: com.genprd.app');
+
+      // Check callback URL
+      debugPrint('Callback URL: ${ApiConfig.callbackUrl}');
+      debugPrint('Callback Host: ${ApiConfig.callbackHost}');
+      debugPrint('Callback Path: ${ApiConfig.callbackPath}');
+
+      debugPrint('================================');
+    } catch (e) {
+      debugPrint('Error in URL diagnostics: $e');
     }
   }
 }

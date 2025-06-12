@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
-import 'package:genprd/shared/widgets/loading_widget.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:flutter/foundation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Check if already authenticated on screen load
+    // Check if already authenticated
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isAuthenticated) {
@@ -29,23 +29,65 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    setState(() {
+      _errorMessage = null;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     try {
-      setState(() {
-        _errorMessage = null;
-      });
-      
-      // Get auth provider and initiate Google sign-in
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.signInWithGoogle();
-      
-      // The navigation will happen automatically when the auth callback is processed
-      // through the deep link handler, or manually if needed
-      if (authProvider.isAuthenticated && mounted) {
-        _navigateToDashboard();
+      debugPrint('Starting Google sign-in process...');
+
+      // First attempt: Try native sign in
+      try {
+        debugPrint('Attempting native Google Sign In...');
+        await authProvider.signInWithGoogleNative();
+
+        if (authProvider.isAuthenticated && mounted) {
+          debugPrint('Native sign in successful, navigating to dashboard');
+          _navigateToDashboard();
+          return;
+        } else {
+          debugPrint('Native sign in did not result in authenticated state');
+        }
+      } catch (nativeError) {
+        debugPrint('Native sign in failed with error: $nativeError');
+
+        // Don't show error yet, we'll try web flow first
+        if (nativeError.toString().contains('PlatformException') ||
+            nativeError.toString().contains('ApiException: 10') ||
+            nativeError.toString().contains('MissingPluginException')) {
+          debugPrint('Detected known error in native flow, trying web flow...');
+        }
+      }
+
+      // Second attempt: Try web flow
+      try {
+        debugPrint('Falling back to web flow authentication...');
+        await authProvider.signInWithGoogle();
+        debugPrint('Web flow URL launched successfully');
+
+        // Show a snackbar to inform user about the redirect
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please complete sign in in your browser'),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+
+        // Note: Web flow doesn't navigate immediately as it waits for callback
+      } catch (webError) {
+        debugPrint('Web flow sign in also failed: $webError');
+        setState(() {
+          _errorMessage = 'Sign in failed: $webError';
+        });
       }
     } catch (e) {
+      debugPrint('Unexpected error during sign in process: $e');
       setState(() {
-        _errorMessage = 'Sign in failed: ${e.toString()}';
+        _errorMessage = 'Sign in error: $e';
       });
     }
   }
@@ -53,19 +95,19 @@ class _LoginScreenState extends State<LoginScreen> {
   void _navigateToDashboard() {
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DashboardScreen())
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     }
   }
 
+  void _skipAuthentication() {
+    debugPrint('Bypassing authentication for development');
+    _navigateToDashboard();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Listen to auth provider for state changes
     final authProvider = Provider.of<AuthProvider>(context);
-    final bool isLoading = authProvider.status == AuthStatus.authenticating;
-    
-    // Use error message from provider or local state
-    final errorMsg = authProvider.errorMessage ?? _errorMessage;
 
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
@@ -96,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Image.asset(
-                      'assets/images/genprd_logo.png',
+                      'assets/images/logo.png',
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -115,24 +157,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Text(
                       'Welcome to GenPRD',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Sign in with your Google account to continue',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Display error if present
-                    if (errorMsg != null)
+                    if (_errorMessage != null ||
+                        authProvider.errorMessage != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 24.0),
                         child: Container(
@@ -143,75 +188,60 @@ class _LoginScreenState extends State<LoginScreen> {
                             border: Border.all(color: Colors.red),
                           ),
                           child: Text(
-                            errorMsg,
-                            style: TextStyle(color: Colors.white),
+                            _errorMessage ?? authProvider.errorMessage ?? '',
+                            style: const TextStyle(color: Colors.red),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                    
+
                     const SizedBox(height: 24),
-                    isLoading
-                        ? const LoadingWidget()
+                    authProvider.status == AuthStatus.authenticating
+                        ? const CircularProgressIndicator()
                         : ElevatedButton.icon(
-                            onPressed: _signInWithGoogle,
-                            icon: CircleAvatar(
-                              backgroundColor: Colors.white,
-                              radius: 16,
-                              child: Image.asset(
-                                'assets/images/google_logo.png',
-                                height: 20.0,
-                              ),
-                            ),
-                            label: Text(
-                              'Sign in with Google',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                              foregroundColor: Theme.of(context).colorScheme.primary,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 24,
-                              ),
-                              minimumSize: const Size(double.infinity, 54),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
+                          onPressed: _signInWithGoogle,
+                          icon: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 16,
+                            child: Image.asset(
+                              'assets/images/google_logo.png',
+                              height: 20.0,
                             ),
                           ),
+                          label: Text(
+                            'Sign in with Google',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 24,
+                            ),
+                            minimumSize: const Size(double.infinity, 54),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
                     const SizedBox(height: 24),
                     Text(
                       'By signing in, you agree to our Terms of Service and Privacy Policy',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary.withAlpha(178),
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withAlpha(178),
+                      ),
                       textAlign: TextAlign.center,
-                    ),
-                    
-                    // Debug option for development - remove in production
-                    const SizedBox(height: 48),
-                    Text(
-                      'Developer options',
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(128), 
-                        fontSize: 12
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _navigateToDashboard,
-                      child: Text(
-                        'Skip authentication (dev only)',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(128), 
-                          fontSize: 12,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
                     ),
                   ],
                 ),

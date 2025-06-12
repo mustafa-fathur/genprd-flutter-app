@@ -4,6 +4,8 @@ import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/features/auth/views/login_screen.dart';
 import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:genprd/shared/views/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Check authentication status after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthAndNavigate();
@@ -26,17 +28,25 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuthAndNavigate() async {
     // Add a small delay to show the splash screen
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (!mounted) return;
-    
+
+    // Check onboarding flag
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+    if (!hasSeenOnboarding) {
+      _navigateToOnboarding();
+      return;
+    }
+
     // Get auth provider
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     // Navigate based on auth status
     if (authProvider.status == AuthStatus.authenticated) {
       _navigateToDashboard();
-    } else if (authProvider.status == AuthStatus.unauthenticated || 
-              authProvider.status == AuthStatus.error) {
+    } else if (authProvider.status == AuthStatus.unauthenticated ||
+        authProvider.status == AuthStatus.error) {
       _navigateToLogin();
     }
     // If still in initial or authenticating state, wait for the provider to update
@@ -44,39 +54,46 @@ class _SplashScreenState extends State<SplashScreen> {
       authProvider.addListener(_authStateListener);
     }
   }
-  
+
   void _authStateListener() {
     if (!mounted) return;
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     // Remove listener once we've determined the auth state
     if (authProvider.status == AuthStatus.authenticated) {
       authProvider.removeListener(_authStateListener);
       _navigateToDashboard();
     } else if (authProvider.status == AuthStatus.unauthenticated ||
-              authProvider.status == AuthStatus.error) {
+        authProvider.status == AuthStatus.error) {
       authProvider.removeListener(_authStateListener);
       _navigateToLogin();
     }
   }
-  
+
   void _navigateToDashboard() {
     if (!mounted) return;
-    
+
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const DashboardScreen())
+      MaterialPageRoute(builder: (context) => const DashboardScreen()),
     );
   }
-  
+
   void _navigateToLogin() {
     if (!mounted) return;
-    
+
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginScreen())
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
-  
+
+  void _navigateToOnboarding() {
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+    );
+  }
+
   @override
   void dispose() {
     // Clean up listener if it's still active
@@ -115,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Image.asset(
-                  'assets/images/genprd_logo.png',
+                  'assets/images/logo.png',
                   fit: BoxFit.contain,
                 ),
               ),
@@ -125,24 +142,22 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'GenPRD',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             // Tagline
             Text(
               'Product Requirements Made Simple',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withAlpha(220),
-                  ),
+                color: Colors.white.withAlpha(220),
+              ),
             ),
             const SizedBox(height: 60),
             // Loading indicator
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.white
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ],
         ),

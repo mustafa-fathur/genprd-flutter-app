@@ -1,4 +1,4 @@
-package com.example.genprd
+package com.genprd.app
 
 import io.flutter.embedding.android.FlutterActivity
 
