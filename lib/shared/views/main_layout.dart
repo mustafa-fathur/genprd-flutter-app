@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
+import 'package:genprd/features/prd/controllers/prd_controller.dart';
 import 'package:genprd/features/prd/views/prd_form_screen.dart';
 import 'package:genprd/features/prd/views/prd_list_screen.dart';
 import 'package:genprd/features/user/views/user_profile_screen.dart';
@@ -7,6 +8,8 @@ import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
+import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:flutter/cupertino.dart';
 
 enum NavigationItem { dashboard, allPrds, pinnedPrds, recentPrds }
 
@@ -28,6 +31,25 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Safely load data after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPrdData();
+    });
+  }
+
+  Future<void> _loadPrdData() async {
+    try {
+      final prdController = Provider.of<PrdController>(context, listen: false);
+      await prdController.loadPinnedPrds();
+      await prdController.loadRecentPrds();
+    } catch (e) {
+      debugPrint('Error loading PRD data: $e');
+    }
+  }
 
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
@@ -54,7 +76,7 @@ class _MainLayoutState extends State<MainLayout> {
         leading:
             !showSidebar
                 ? IconButton(
-                  icon: Icon(Icons.menu, color: primaryColor),
+                  icon: const Icon(Icons.menu),
                   padding: EdgeInsets.zero,
                   onPressed: _openDrawer,
                 )
@@ -62,14 +84,13 @@ class _MainLayoutState extends State<MainLayout> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/images/logo.png', height: 48),
+            Image.asset('assets/images/logo.png', height: 46),
             const SizedBox(width: 2),
             Text(
               'GenPRD',
               style: TextStyle(
-                fontFamily: 'Helvetica Neue',
-                fontWeight: FontWeight.w700,
-                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
                 color: primaryColor,
                 letterSpacing: -0.5,
               ),
@@ -89,12 +110,20 @@ class _MainLayoutState extends State<MainLayout> {
                 builder: (context, userProvider, _) {
                   final user = userProvider.user;
                   return CircleAvatar(
-                    radius: 18,
+                    radius: 16,
+                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                     backgroundImage:
                         user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
                             ? NetworkImage(user.avatarUrl!)
-                            : const AssetImage('assets/images/profile.jpg')
-                                as ImageProvider,
+                            : null,
+                    child:
+                        user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                            ? const Icon(
+                              Icons.person,
+                              size: 16,
+                              color: AppTheme.primaryColor,
+                            )
+                            : null,
                   );
                 },
               ),
@@ -111,10 +140,10 @@ class _MainLayoutState extends State<MainLayout> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -130,6 +159,7 @@ class _MainLayoutState extends State<MainLayout> {
           AppRouter.navigateToCreatePrd(context);
         },
         backgroundColor: primaryColor,
+        elevation: 2,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -138,11 +168,12 @@ class _MainLayoutState extends State<MainLayout> {
   Widget _buildSidebar({bool isDrawer = true}) {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
+    final textTheme = theme.textTheme;
 
     return Container(
-      width: isDrawer ? null : 250,
-      constraints: BoxConstraints(maxWidth: isDrawer ? 280 : 250),
-      color: theme.scaffoldBackgroundColor,
+      width: isDrawer ? null : 240,
+      constraints: BoxConstraints(maxWidth: isDrawer ? 280 : 240),
+      color: Colors.white,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +182,7 @@ class _MainLayoutState extends State<MainLayout> {
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 18,
+                  vertical: 16,
                 ),
                 color: Colors.white,
                 child: Row(
@@ -162,13 +193,14 @@ class _MainLayoutState extends State<MainLayout> {
                       'GenPRD',
                       style: TextStyle(
                         color: primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: Icon(Icons.close, color: primaryColor),
+                      icon: const Icon(Icons.close),
                       onPressed: _closeDrawer,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -176,15 +208,15 @@ class _MainLayoutState extends State<MainLayout> {
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             _buildNavItem(
-              icon: Icons.dashboard,
+              icon: CupertinoIcons.square_grid_2x2,
               label: 'Dashboard',
               selected: widget.selectedItem == NavigationItem.dashboard,
               onTap: () => _navigateTo(NavigationItem.dashboard),
             ),
             _buildNavItem(
-              icon: Icons.description_outlined,
+              icon: CupertinoIcons.doc_text,
               label: 'All PRDs',
               selected: widget.selectedItem == NavigationItem.allPrds,
               onTap: () => _navigateTo(NavigationItem.allPrds),
@@ -195,18 +227,52 @@ class _MainLayoutState extends State<MainLayout> {
               child: Text(
                 'Pinned',
                 style: TextStyle(
-                  color: Colors.grey[700],
+                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            _buildNavItem(
-              icon: Icons.push_pin_outlined,
-              label: 'Pinned PRDs',
-              selected: widget.selectedItem == NavigationItem.pinnedPrds,
-              onTap: () => _navigateTo(NavigationItem.pinnedPrds),
+            Consumer<PrdController>(
+              builder: (context, prdController, _) {
+                final pinnedPrds = prdController.pinnedPrds;
+
+                if (pinnedPrds.isEmpty) {
+                  return _buildNavItem(
+                    icon: CupertinoIcons.pin,
+                    label: 'Pinned PRDs',
+                    selected: widget.selectedItem == NavigationItem.pinnedPrds,
+                    onTap: () => _navigateTo(NavigationItem.pinnedPrds),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    _buildNavItem(
+                      icon: CupertinoIcons.pin,
+                      label: 'Pinned PRDs',
+                      selected:
+                          widget.selectedItem == NavigationItem.pinnedPrds,
+                      onTap: () => _navigateTo(NavigationItem.pinnedPrds),
+                    ),
+                    ...pinnedPrds
+                        .take(3)
+                        .map(
+                          (prd) => _buildPrdItem(
+                            prd['product_name'] ?? 'Untitled PRD',
+                            onTap:
+                                () => AppRouter.navigateToPrdDetail(
+                                  context,
+                                  prd['id'],
+                                ),
+                          ),
+                        )
+                        .toList(),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             Padding(
@@ -214,44 +280,81 @@ class _MainLayoutState extends State<MainLayout> {
               child: Text(
                 'Recent',
                 style: TextStyle(
-                  color: Colors.grey[700],
+                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            _buildNavItem(
-              icon: Icons.history_outlined,
-              label: 'Recent PRDs',
-              selected: widget.selectedItem == NavigationItem.recentPrds,
-              onTap: () => _navigateTo(NavigationItem.recentPrds),
+            Consumer<PrdController>(
+              builder: (context, prdController, _) {
+                final recentPrds = prdController.recentPrds;
+
+                if (recentPrds.isEmpty) {
+                  return _buildNavItem(
+                    icon: CupertinoIcons.clock,
+                    label: 'Recent PRDs',
+                    selected: widget.selectedItem == NavigationItem.recentPrds,
+                    onTap: () => _navigateTo(NavigationItem.recentPrds),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    _buildNavItem(
+                      icon: CupertinoIcons.clock,
+                      label: 'Recent PRDs',
+                      selected:
+                          widget.selectedItem == NavigationItem.recentPrds,
+                      onTap: () => _navigateTo(NavigationItem.recentPrds),
+                    ),
+                    ...recentPrds
+                        .take(3)
+                        .map(
+                          (prd) => _buildPrdItem(
+                            prd['product_name'] ?? 'Untitled PRD',
+                            onTap:
+                                () => AppRouter.navigateToPrdDetail(
+                                  context,
+                                  prd['id'],
+                                ),
+                          ),
+                        )
+                        .toList(),
+                  ],
+                );
+              },
             ),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 44,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     AppRouter.navigateToCreatePrd(context);
                   },
                   icon: const Icon(
-                    Icons.add_circle_outline,
+                    CupertinoIcons.add,
                     color: Colors.white,
+                    size: 18,
                   ),
                   label: const Text(
                     'New PRD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 0,
                   ),
@@ -274,33 +377,68 @@ class _MainLayoutState extends State<MainLayout> {
     final primaryColor = theme.primaryColor;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
         color: selected ? primaryColor.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: [
                 Icon(
                   icon,
-                  color: selected ? primaryColor : Colors.grey[700],
-                  size: 22,
+                  color: selected ? primaryColor : AppTheme.textSecondaryColor,
+                  size: 18,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Text(
                   label,
                   style: TextStyle(
-                    color: selected ? primaryColor : Colors.grey[800],
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    color: selected ? primaryColor : AppTheme.textColor,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 14,
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrdItem(String title, {required VoidCallback onTap}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 42, right: 12, top: 4, bottom: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              Icon(
+                CupertinoIcons.doc_text,
+                size: 14,
+                color: AppTheme.textSecondaryColor.withOpacity(0.7),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.textSecondaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -326,12 +464,10 @@ class _MainLayoutState extends State<MainLayout> {
         AppRouter.navigateToAllPrds(context);
         break;
       case NavigationItem.pinnedPrds:
-        // For now, navigate to all PRDs
-        AppRouter.navigateToAllPrds(context);
+        AppRouter.navigateToPinnedPrds(context);
         break;
       case NavigationItem.recentPrds:
-        // For now, navigate to all PRDs
-        AppRouter.navigateToAllPrds(context);
+        AppRouter.navigateToRecentPrds(context);
         break;
     }
   }

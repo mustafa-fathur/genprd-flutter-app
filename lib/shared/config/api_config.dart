@@ -1,3 +1,5 @@
+import 'package:genprd/shared/services/token_storage.dart';
+
 class ApiConfig {
   // Base URLs for different environments
   static const String _devBaseUrl = 'http://10.0.2.2:3000/api';
@@ -20,6 +22,9 @@ class ApiConfig {
   static const String userProfile = '/users/profile';
   static const String updateUserProfile = '/users/profile';
 
+  // Dashboard endpoints
+  static const String dashboard = '/dashboard';
+
   // Deep link configurations
   static const String appScheme = 'genprd';
   static const String callbackHost = 'auth';
@@ -30,4 +35,20 @@ class ApiConfig {
   // Timeout durations (in milliseconds)
   static const int connectionTimeout = 30000; // 30 seconds
   static const int receiveTimeout = 30000; // 30 seconds
+
+  // Get headers for API requests
+  static Future<Map<String, String>> getHeaders() async {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // Get token from storage
+    final token = await TokenStorage.getAccessToken();
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
 }

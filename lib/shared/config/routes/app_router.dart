@@ -8,6 +8,7 @@ import 'package:genprd/features/prd/views/prd_list_screen.dart';
 import 'package:genprd/features/user/views/user_profile_screen.dart';
 import 'package:genprd/shared/views/session_expired_screen.dart';
 import 'package:genprd/shared/views/splash_screen.dart';
+import 'package:genprd/shared/views/onboarding_screen.dart';
 
 class AppRouter {
   // Route paths
@@ -21,6 +22,7 @@ class AppRouter {
   static const String createPrd = '/prds/create';
   static const String userProfile = '/profile';
   static const String sessionExpired = '/session-expired';
+  static const String onboarding = '/onboarding';
   static const String root = '/';
 
   // Screen builder methods for use in unified router
@@ -33,6 +35,7 @@ class AppRouter {
   static Widget buildRecentPrdsScreen() => const PrdListScreen();
   static Widget buildCreatePrdScreen() => const PrdFormScreen();
   static Widget buildUserProfileScreen() => const UserProfileScreen();
+  static Widget buildOnboardingScreen() => const OnboardingScreen();
   static Widget buildPrdDetailScreen(String prdId) =>
       PrdDetailScreen(prdId: prdId);
 
@@ -65,6 +68,14 @@ class AppRouter {
         builder: (context, state) {
           debugPrint('Building login screen');
           return buildLoginScreen();
+        },
+      ),
+      GoRoute(
+        path: onboarding,
+        name: 'onboarding',
+        builder: (context, state) {
+          debugPrint('Building onboarding screen');
+          return buildOnboardingScreen();
         },
       ),
       GoRoute(
@@ -182,6 +193,16 @@ class AppRouter {
     context.push(allPrds);
   }
 
+  static void navigateToPinnedPrds(BuildContext context) {
+    debugPrint('Navigating to pinned PRDs: $pinnedPrds');
+    context.push(pinnedPrds);
+  }
+
+  static void navigateToRecentPrds(BuildContext context) {
+    debugPrint('Navigating to recent PRDs: $recentPrds');
+    context.push(recentPrds);
+  }
+
   static void navigateToPrdDetail(BuildContext context, String prdId) {
     final path = '/prds/$prdId';
     debugPrint('Navigating to PRD detail: $path');
@@ -213,5 +234,10 @@ class AppRouter {
   static void navigateToSessionExpired(BuildContext context) {
     debugPrint('Navigating to session expired: $sessionExpired');
     context.go(sessionExpired);
+  }
+
+  static void navigateToOnboarding(BuildContext context) {
+    debugPrint('Navigating to onboarding: $onboarding');
+    context.go(onboarding);
   }
 }

@@ -4,7 +4,6 @@ import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:genprd/shared/views/onboarding_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -83,9 +82,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToOnboarding() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-    );
+    // Use GoRouter with the constant from AppRouter
+    context.go(AppRouter.onboarding);
   }
 
   @override
