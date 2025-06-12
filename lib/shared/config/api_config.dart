@@ -14,7 +14,13 @@ class ApiConfig {
   static const String googleAuthMobile = '/auth/mobile/google';
   static const String googleAuthVerify = '/auth/verify-google-token';
   static const String refreshToken = '/auth/refresh';
-  static const String logout = '/auth/logout'; // Deep link configurations
+  static const String logout = '/auth/logout';
+
+  // User endpoints
+  static const String userProfile = '/users/profile';
+  static const String updateUserProfile = '/users/profile';
+
+  // Deep link configurations
   static const String appScheme = 'genprd';
   static const String callbackHost = 'auth';
   static const String callbackPath = '/callback';

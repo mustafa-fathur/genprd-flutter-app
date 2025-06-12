@@ -6,6 +6,7 @@ import 'package:genprd/shared/services/token_storage.dart';
 import 'package:genprd/features/user/models/user_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import '../models/auth_credentials.dart';
 
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -419,6 +420,164 @@ class AuthService {
       debugPrint('================================');
     } catch (e) {
       debugPrint('Error in URL diagnostics: $e');
+    }
+  }
+
+  // Conventional Auth Methods
+  Future<User?> register(AuthCredentials credentials) async {
+    try {
+      debugPrint('Attempting registration with email: ${credentials.email}');
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(credentials.toJson()),
+      );
+
+      debugPrint('Registration response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+      // Accept both 200 OK and 201 Created as successful responses
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        debugPrint('Registration successful: ${response.body}');
+
+        final data = responseData['data'];
+        if (data == null) {
+          debugPrint('Registration response missing data field');
+          throw Exception('Registration failed: Invalid server response');
+        }
+
+        // Save tokens - with type safety
+        if (data['access_token'] != null) {
+          await TokenStorage.saveAccessToken(data['access_token'].toString());
+        }
+
+        if (data['refresh_token'] != null) {
+          await TokenStorage.saveRefreshToken(data['refresh_token'].toString());
+        }
+
+        // Save user data
+        if (data['user'] != null) {
+          await TokenStorage.saveUserData(data['user']);
+          debugPrint('Registration successful, user data saved');
+          return User.fromJson(data['user']);
+        } else {
+          debugPrint('Registration response missing user data');
+          throw Exception('Registration successful but user data is missing');
+        }
+      } else {
+        // Handle error responses
+        debugPrint('Registration failed with status: ${response.statusCode}');
+        debugPrint('Error response: ${response.body}');
+
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMessage = errorData['message'] ?? 'Registration failed';
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception('Registration failed: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
+      debugPrint('Registration error: $e');
+      rethrow;
+    }
+  }
+
+  Future<User?> login(AuthCredentials credentials) async {
+    try {
+      debugPrint('Attempting login with email: ${credentials.email}');
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(credentials.toJson()),
+      );
+
+      debugPrint('Login response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        debugPrint('Login successful: ${response.body}');
+
+        final data = responseData['data'];
+        if (data == null) {
+          debugPrint('Login response missing data field');
+          throw Exception('Login failed: Invalid server response');
+        }
+
+        // Save tokens with type safety
+        if (data['access_token'] != null) {
+          await TokenStorage.saveAccessToken(data['access_token'].toString());
+        } else {
+          throw Exception('Login failed: Missing access token');
+        }
+
+        if (data['refresh_token'] != null) {
+          await TokenStorage.saveRefreshToken(data['refresh_token'].toString());
+        }
+
+        // Save user data
+        if (data['user'] != null) {
+          await TokenStorage.saveUserData(data['user']);
+          debugPrint('Login successful, user data saved');
+          return User.fromJson(data['user']);
+        } else {
+          debugPrint('Login response missing user data');
+          throw Exception('Login successful but user data is missing');
+        }
+      } else {
+        // Handle error responses
+        debugPrint('Login failed with status: ${response.statusCode}');
+        debugPrint('Error response: ${response.body}');
+
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMessage = errorData['message'] ?? 'Login failed';
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception('Login failed: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send password reset email');
+      }
+    } catch (e) {
+      debugPrint('Forgot password error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> resetPassword(String token, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': token, 'password': newPassword}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to reset password');
+      }
+    } catch (e) {
+      debugPrint('Reset password error: $e');
+      rethrow;
     }
   }
 }

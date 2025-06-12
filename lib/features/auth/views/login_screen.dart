@@ -14,6 +14,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  bool _isLogin = true;
   String? _errorMessage;
 
   @override
@@ -26,6 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _navigateToDashboard();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   Future<void> _signInWithGoogle() async {
@@ -76,8 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         }
-
-        // Note: Web flow doesn't navigate immediately as it waits for callback
       } catch (webError) {
         debugPrint('Web flow sign in also failed: $webError');
         setState(() {
@@ -92,17 +103,56 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      setState(() {
+        _errorMessage = null;
+      });
+
+      if (_isLogin) {
+        await authProvider.login(
+          _emailController.text,
+          _passwordController.text,
+        );
+      } else {
+        await authProvider.register(
+          _emailController.text,
+          _passwordController.text,
+          _nameController.text,
+        );
+      }
+
+      if (authProvider.isAuthenticated && mounted) {
+        _navigateToDashboard();
+      } else if (mounted && authProvider.errorMessage != null) {
+        setState(() {
+          _errorMessage = authProvider.errorMessage;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          // Remove "Exception: " prefix for cleaner error messages
+          if (_errorMessage != null &&
+              _errorMessage!.startsWith("Exception: ")) {
+            _errorMessage = _errorMessage!.substring("Exception: ".length);
+          }
+        });
+      }
+    }
+  }
+
   void _navigateToDashboard() {
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     }
-  }
-
-  void _skipAuthentication() {
-    debugPrint('Bypassing authentication for development');
-    _navigateToDashboard();
   }
 
   @override
@@ -150,100 +200,224 @@ class _LoginScreenState extends State<LoginScreen> {
           Expanded(
             child: Container(
               color: Theme.of(context).colorScheme.primary,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Welcome to GenPRD',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sign in with your Google account to continue',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Display error if present
-                    if (_errorMessage != null ||
-                        authProvider.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withAlpha(40),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isLogin ? 'Welcome Back' : 'Create Account',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isLogin
+                              ? 'Sign in to continue'
+                              : 'Create an account to get started',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Display error if present
+                        if (_errorMessage != null ||
+                            authProvider.errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 24.0),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withAlpha(40),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red),
+                              ),
+                              child: Text(
+                                _errorMessage ??
+                                    authProvider.errorMessage ??
+                                    '',
+                                style: const TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+
+                        if (!_isLogin) ...[
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your name';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        if (authProvider.status == AuthStatus.authenticating)
+                          const CircularProgressIndicator()
+                        else
+                          Column(
+                            children: [
+                              ElevatedButton(
+                                onPressed: _submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppTheme.primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  minimumSize: const Size(double.infinity, 54),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  _isLogin ? 'Sign In' : 'Register',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'OR',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _signInWithGoogle,
+                                icon: CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  radius: 16,
+                                  child: Image.asset(
+                                    'assets/images/google_logo.png',
+                                    height: 20.0,
+                                  ),
+                                ),
+                                label: Text(
+                                  'Sign in with Google',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppTheme.primaryColor,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                    horizontal: 24,
+                                  ),
+                                  minimumSize: const Size(double.infinity, 54),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 24),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                              _errorMessage = null;
+                            });
+                          },
                           child: Text(
-                            _errorMessage ?? authProvider.errorMessage ?? '',
-                            style: const TextStyle(color: Colors.red),
-                            textAlign: TextAlign.center,
+                            _isLogin
+                                ? 'Don\'t have an account? Register'
+                                : 'Already have an account? Sign In',
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                      ),
-
-                    const SizedBox(height: 24),
-                    authProvider.status == AuthStatus.authenticating
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton.icon(
-                          onPressed: _signInWithGoogle,
-                          icon: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 16,
-                            child: Image.asset(
-                              'assets/images/google_logo.png',
-                              height: 20.0,
-                            ),
+                        if (_isLogin) ...[
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Forgot Password?',
+                            style: TextStyle(color: Colors.white),
                           ),
-                          label: Text(
-                            'Sign in with Google',
-                            style: Theme.of(
+                        ],
+                        const SizedBox(height: 24),
+                        Text(
+                          'By signing in, you agree to our Terms of Service and Privacy Policy',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(
                               context,
-                            ).textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                            ).colorScheme.onPrimary.withAlpha(178),
                           ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.onPrimary,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                              horizontal: 24,
-                            ),
-                            minimumSize: const Size(double.infinity, 54),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'By signing in, you agree to our Terms of Service and Privacy Policy',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary.withAlpha(178),
-                      ),
-                      textAlign: TextAlign.center,
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
+import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/views/splash_screen.dart';
 import 'package:genprd/shared/services/deep_link_handler.dart';
@@ -20,8 +21,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Create AuthProvider instance that will be shared throughout the app
+  // Create provider instances that will be shared throughout the app
   final AuthProvider _authProvider = AuthProvider();
+  final UserProvider _userProvider = UserProvider();
 
   @override
   void initState() {
@@ -54,9 +56,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Provide AuthProvider to the entire app
-    return ChangeNotifierProvider.value(
-      value: _authProvider,
+    // Provide providers to the entire app
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _authProvider),
+        ChangeNotifierProvider.value(value: _userProvider),
+      ],
       child: MaterialApp(
         title: 'GenPRD',
         debugShowCheckedModeBanner: false,
