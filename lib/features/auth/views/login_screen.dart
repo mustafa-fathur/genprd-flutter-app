@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
-import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
+import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -149,9 +150,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _navigateToDashboard() {
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      debugPrint('Navigating from login to dashboard');
+      // Use direct navigation to avoid any issues with context
+      Future.microtask(() {
+        try {
+          debugPrint(
+            'Attempting navigation to dashboard: ${AppRouter.dashboard}',
+          );
+          if (context.mounted) {
+            // Use go_router navigation
+            context.go(AppRouter.dashboard);
+            debugPrint('Navigation to dashboard completed');
+          }
+        } catch (e) {
+          debugPrint('Error during navigation to dashboard: $e');
+          // Try again with a slight delay if the first attempt fails
+          if (context.mounted) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (context.mounted) {
+                debugPrint('Retrying navigation to dashboard with delay');
+                context.go(AppRouter.dashboard);
+              }
+            });
+          }
+        }
+      });
     }
   }
 

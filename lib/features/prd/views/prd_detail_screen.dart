@@ -3,43 +3,45 @@ import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 
 class PrdDetailScreen extends StatefulWidget {
-  final String title;
-  
-  const PrdDetailScreen({
-    super.key,
-    required this.title,
-  });
+  final String prdId;
+
+  const PrdDetailScreen({super.key, required this.prdId});
 
   @override
   State<PrdDetailScreen> createState() => _PrdDetailScreenState();
 }
 
-class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProviderStateMixin {
+class _PrdDetailScreenState extends State<PrdDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // Add a map to store PRD data
   late Map<String, dynamic> _prdData;
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
-    // Initialize PRD data - in a real app, this would come from an API or database
+
+    // Initialize PRD data - in a real app, this would come from an API or database based on prdId
     _prdData = {
-      'title': widget.title,
+      'id': widget.prdId,
+      'title': 'PRD ${widget.prdId}', // Placeholder title based on ID
       'version': '0.8.2',
       'owner': 'Maha',
       'stage': 'Draft',
       'startDate': '2025-01-01',
       'endDate': '2025-12-31',
-      'overview': 'This is a project overview for ${widget.title}. It describes the purpose, goals, and scope of the project.',
-      'problemStatements': 'The current system has several limitations:\n\n'
+      'overview':
+          'This is a project overview for PRD ${widget.prdId}. It describes the purpose, goals, and scope of the project.',
+      'problemStatements':
+          'The current system has several limitations:\n\n'
           '1. Performance issues with large datasets\n'
           '2. Limited mobile support\n'
           '3. Lack of integration with other systems\n'
           '4. Poor user experience',
-      'objectives': '1. Improve system performance by 50%\n'
+      'objectives':
+          '1. Improve system performance by 50%\n'
           '2. Develop a responsive mobile interface\n'
           '3. Implement API integrations with key systems\n'
           '4. Redesign the user interface for better UX',
@@ -52,11 +54,13 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
         'consulted': ['UX Team', 'QA Team'],
         'informed': ['Stakeholders'],
       },
-      'successMetrics': '1. 50% improvement in system performance\n'
+      'successMetrics':
+          '1. 50% improvement in system performance\n'
           '2. 30% increase in mobile usage\n'
           '3. 25% reduction in support tickets\n'
           '4. 90% user satisfaction rating',
-      'timeline': 'January 1, 2025: Project Kickoff\n\n'
+      'timeline':
+          'January 1, 2025: Project Kickoff\n\n'
           'January 15, 2025: Requirements Finalization\n\n'
           'February 1, 2025: Design Phase Completion\n\n'
           'March 1, 2025: Development Phase Completion\n\n'
@@ -64,7 +68,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           'April 1, 2025: Project Launch',
     };
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -73,7 +77,8 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(      appBar: AppBar(
+    return Scaffold(
+      appBar: AppBar(
         title: Text(_prdData['title']),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -88,9 +93,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PrdEditScreen(
-                    prdData: _prdData,
-                  ),
+                  builder: (context) => PrdEditScreen(prdData: _prdData),
                 ),
               ).then((updatedData) {
                 if (updatedData != null) {
@@ -115,24 +118,19 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
           indicatorWeight: 3.0,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Team & Roles'),
-          ],
+          tabs: const [Tab(text: 'Overview'), Tab(text: 'Team & Roles')],
         ),
         elevation: 0,
       ),
       body: Column(
-        children: [          // Status bar
+        children: [
+          // Status bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.shade200,
-                  width: 1,
-                ),
+                bottom: BorderSide(color: Colors.grey.shade200, width: 1),
               ),
             ),
             child: Row(
@@ -158,16 +156,24 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppTheme.badgeColors[_prdData['stage']]?.withOpacity(0.15) ?? 
-                           Colors.grey.withOpacity(0.15),
+                    color:
+                        AppTheme.badgeColors[_prdData['stage']]?.withOpacity(
+                          0.15,
+                        ) ??
+                        Colors.grey.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     _prdData['stage'],
                     style: TextStyle(
-                      color: AppTheme.badgeColors[_prdData['stage']] ?? Colors.grey,
+                      color:
+                          AppTheme.badgeColors[_prdData['stage']] ??
+                          Colors.grey,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
@@ -176,15 +182,12 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
               ],
             ),
           ),
-          
+
           // Tab content
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildOverviewTab(),
-                _buildTeamRolesTab(),
-              ],
+              children: [_buildOverviewTab(), _buildTeamRolesTab()],
             ),
           ),
         ],
@@ -205,15 +208,15 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
             _buildInfoRow('Document Owner:', _prdData['owner']),
             _buildInfoRow('Created Date:', '01/01/2025'),
           ]),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('Project Overview'),
           _buildContentCard(_prdData['overview']),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('Problem Statements'),
           _buildContentCard(_prdData['problemStatements']),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('Objectives'),
           _buildContentCard(_prdData['objectives']),
@@ -234,46 +237,46 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
             _buildInfoRow('Stakeholders:', _prdData['stakeholders'].join(', ')),
             _buildInfoRow('Developers:', _prdData['developers'].join(', ')),
           ]),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('Timeline'),
           _buildContentCard(_prdData['timeline']),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('Success Metrics'),
           _buildContentCard(_prdData['successMetrics']),
-          
+
           const SizedBox(height: 20),
           _buildSectionHeader('DARCI Roles'),
-          
+
           _buildDarciRoleCard(
             'Decider',
             _prdData['darci']['decisionMaker'],
             'Responsible for making final decisions on project direction and scope.',
           ),
           const SizedBox(height: 12),
-          
+
           _buildDarciRoleCard(
             'Accountable',
             _prdData['darci']['accountable'],
             'Accountable for the successful delivery of the project.',
           ),
           const SizedBox(height: 12),
-          
+
           _buildDarciRoleCard(
             'Responsible',
             _prdData['darci']['responsible'].join(', '),
             'Responsible for implementing the project requirements.',
           ),
           const SizedBox(height: 12),
-          
+
           _buildDarciRoleCard(
             'Consulted',
             _prdData['darci']['consulted'].join(', '),
             'Consulted for expertise in specific areas of the project.',
           ),
           const SizedBox(height: 12),
-          
+
           _buildDarciRoleCard(
             'Informed',
             _prdData['darci']['informed'].join(', '),
@@ -287,7 +290,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   Widget _buildSectionHeader(String title) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -299,10 +302,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
           ),
         ),
         const SizedBox(height: 6),
-        Divider(
-          color: Colors.grey.shade200,
-          thickness: 1,
-        ),
+        Divider(color: Colors.grey.shade200, thickness: 1),
         const SizedBox(height: 8),
       ],
     );
@@ -326,7 +326,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
 
   Widget _buildContentCard(String content) {
     final theme = Theme.of(context);
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -337,9 +337,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
       ),
       child: Text(
         content,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          height: 1.5,
-        ),
+        style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
       ),
     );
   }
@@ -347,7 +345,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   Widget _buildInfoRow(String label, String value) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: Row(
@@ -363,12 +361,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: textTheme.bodyMedium,
-            ),
-          ),
+          Expanded(child: Text(value, style: textTheme.bodyMedium)),
         ],
       ),
     );
@@ -377,7 +370,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
   Widget _buildDarciRoleCard(String role, String people, String guidelines) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -397,10 +390,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            people,
-            style: textTheme.bodyMedium,
-          ),
+          Text(people, style: textTheme.bodyMedium),
           const SizedBox(height: 4),
           Text(
             guidelines,
@@ -416,7 +406,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
 
   void _showOptionsMenu(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -449,9 +439,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PrdEditScreen(
-                        prdData: _prdData,
-                      ),
+                      builder: (context) => PrdEditScreen(prdData: _prdData),
                     ),
                   ).then((updatedData) {
                     if (updatedData != null) {
@@ -491,8 +479,10 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: Text(
-                  'Delete PRD', 
-                  style: theme.textTheme.titleSmall?.copyWith(color: Colors.red),
+                  'Delete PRD',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: Colors.red,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -508,20 +498,24 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> with SingleTickerProv
 
   void _showDeleteConfirmationDialog(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text(
             'Delete PRD',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Text(
-            'Are you sure you want to delete "${widget.title}"? This action cannot be undone.',
+            'Are you sure you want to delete "${_prdData['title']}"? This action cannot be undone.',
             style: theme.textTheme.bodyMedium,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           actions: [
             TextButton(
               onPressed: () {

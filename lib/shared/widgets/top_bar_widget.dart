@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/features/user/views/user_profile_screen.dart';
+import 'package:genprd/shared/config/routes/app_router.dart';
 
 class TopBarWidget extends StatelessWidget {
   final String title;
@@ -13,28 +13,41 @@ class TopBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+
     return AppBar(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: Colors.white,
       elevation: 0,
       automaticallyImplyLeading: false,
-      title: Text(
-        'GenPRD',
-        style: const TextStyle(
-          fontFamily: 'Helvetica Neue',
-          fontWeight: FontWeight.w700,
-          fontSize: 24,
-          color: Colors.white,
-          letterSpacing: -0.5,
-        ),
+      leading: IconButton(
+        icon: Icon(Icons.menu, color: primaryColor),
+        padding: EdgeInsets.zero,
+        onPressed: onMenuPressed,
       ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset('assets/images/logo.png', height: 48),
+          const SizedBox(width: 2),
+          Text(
+            'GenPRD',
+            style: TextStyle(
+              fontFamily: 'Helvetica Neue',
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              color: primaryColor,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+      titleSpacing: 0,
       centerTitle: false,
       actions: [
         GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const UserProfileScreen()),
-            );
+            AppRouter.navigateToUserProfile(context);
           },
           child: Padding(
             padding: const EdgeInsets.only(right: 16.0),

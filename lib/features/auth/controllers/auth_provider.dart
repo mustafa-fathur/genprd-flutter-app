@@ -25,6 +25,12 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
+  // Set status with logging
+  void _setStatus(AuthStatus newStatus) {
+    debugPrint('Auth status changing from $_status to $newStatus');
+    _status = newStatus;
+  }
+
   // Initialize authentication state
   Future<void> initAuth() async {
     if (_status == AuthStatus.authenticating) return;
@@ -34,16 +40,16 @@ class AuthProvider with ChangeNotifier {
       final isAuth = await _authService.isAuthenticated();
 
       if (isAuth) {
-        _status = AuthStatus.authenticated;
+        _setStatus(AuthStatus.authenticated);
         _user = await _authService.getUserProfile();
         debugPrint('User is authenticated: ${_user?.email}');
       } else {
-        _status = AuthStatus.unauthenticated;
+        _setStatus(AuthStatus.unauthenticated);
         _user = null;
         debugPrint('User is not authenticated');
       }
     } catch (e) {
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
       _errorMessage = e.toString();
       debugPrint('Auth initialization error: $e');
     }
@@ -56,7 +62,7 @@ class AuthProvider with ChangeNotifier {
     if (_status == AuthStatus.authenticating) return;
 
     try {
-      _status = AuthStatus.authenticating;
+      _setStatus(AuthStatus.authenticating);
       _errorMessage = null;
       notifyListeners();
 
@@ -65,7 +71,7 @@ class AuthProvider with ChangeNotifier {
 
       // Note: Autentikasi sebenarnya terjadi setelah callback OAuth
     } catch (e) {
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
       _errorMessage = e.toString();
       notifyListeners();
       debugPrint('Sign in error: $e');
@@ -78,7 +84,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       debugPrint('Starting Google Native sign-in process...');
-      _status = AuthStatus.authenticating;
+      _setStatus(AuthStatus.authenticating);
       _errorMessage = null;
       notifyListeners();
 
@@ -86,12 +92,16 @@ class AuthProvider with ChangeNotifier {
 
       // Get user after successful authentication
       _user = await _authService.getUserProfile();
-      _status = AuthStatus.authenticated;
+      _setStatus(AuthStatus.authenticated);
+      debugPrint(
+        'Native Google sign-in completed successfully, user: ${_user?.email}',
+      );
 
-      debugPrint('Native Google sign-in completed successfully');
+      // Add a small delay before notifying listeners to ensure navigation works properly
+      await Future.delayed(const Duration(milliseconds: 100));
     } catch (e) {
       debugPrint('Native sign in error: $e');
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
       _errorMessage = e.toString();
     }
 
@@ -102,26 +112,28 @@ class AuthProvider with ChangeNotifier {
   Future<bool> processAuthCallback(Map<String, String> params) async {
     try {
       debugPrint('Processing auth callback with params: $params');
-      _status = AuthStatus.authenticating;
+      _setStatus(AuthStatus.authenticating);
       _errorMessage = null;
       notifyListeners();
 
       _user = await _authService.processAuthCallback(params);
 
       if (_user != null) {
-        _status = AuthStatus.authenticated;
-        debugPrint('Authentication successful via callback');
+        _setStatus(AuthStatus.authenticated);
+        debugPrint(
+          'Authentication successful via callback, user: ${_user?.email}',
+        );
         notifyListeners();
         return true;
       } else {
-        _status = AuthStatus.unauthenticated;
+        _setStatus(AuthStatus.unauthenticated);
         debugPrint('Authentication failed via callback');
         notifyListeners();
         return false;
       }
     } catch (e) {
       debugPrint('Auth callback processing error: $e');
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
       _errorMessage = e.toString();
       notifyListeners();
       return false;
@@ -132,9 +144,10 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     try {
       await _authService.logout();
-      _status = AuthStatus.unauthenticated;
+      _setStatus(AuthStatus.unauthenticated);
       _user = null;
       _errorMessage = null;
+      debugPrint('User logged out successfully');
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('Logout error: $e');
@@ -143,12 +156,36 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Force logout (used when token is invalid)
+  Future<void> forceLogout() async {
+    debugPrint('Force logout called');
+
+    try {
+      // Clear tokens first
+      await _authService.logout();
+      debugPrint('Force logout: tokens cleared');
+    } catch (e) {
+      debugPrint('Force logout: error clearing tokens: $e');
+      // Continue even if token clearing fails
+    }
+
+    // Update state regardless of token clearing success
+    _setStatus(AuthStatus.unauthenticated);
+    _user = null;
+    _errorMessage = null;
+
+    debugPrint('Force logout: state updated to unauthenticated');
+
+    // Notify listeners immediately
+    notifyListeners();
+  }
+
   // Conventional Auth Methods
   Future<void> register(String email, String password, String name) async {
     if (_status == AuthStatus.authenticating) return;
 
     try {
-      _status = AuthStatus.authenticating;
+      _setStatus(AuthStatus.authenticating);
       _errorMessage = null;
       notifyListeners();
 
@@ -161,14 +198,15 @@ class AuthProvider with ChangeNotifier {
       _user = await _authService.register(credentials);
 
       if (_user != null) {
-        _status = AuthStatus.authenticated;
-        debugPrint('Registration successful');
+        _setStatus(AuthStatus.authenticated);
+        debugPrint('Registration successful, user: ${_user?.email}');
       } else {
-        _status = AuthStatus.error;
+        _setStatus(AuthStatus.error);
         _errorMessage = 'Registration failed: Unknown error';
+        debugPrint('Registration failed: Unknown error');
       }
     } catch (e) {
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
 
       // Clean up error message for display
       String errorMsg = e.toString();
@@ -187,7 +225,7 @@ class AuthProvider with ChangeNotifier {
     if (_status == AuthStatus.authenticating) return;
 
     try {
-      _status = AuthStatus.authenticating;
+      _setStatus(AuthStatus.authenticating);
       _errorMessage = null;
       notifyListeners();
 
@@ -196,14 +234,15 @@ class AuthProvider with ChangeNotifier {
       _user = await _authService.login(credentials);
 
       if (_user != null) {
-        _status = AuthStatus.authenticated;
-        debugPrint('Login successful');
+        _setStatus(AuthStatus.authenticated);
+        debugPrint('Login successful, user: ${_user?.email}');
       } else {
-        _status = AuthStatus.error;
+        _setStatus(AuthStatus.error);
         _errorMessage = 'Invalid email or password';
+        debugPrint('Login failed: Invalid email or password');
       }
     } catch (e) {
-      _status = AuthStatus.error;
+      _setStatus(AuthStatus.error);
       _errorMessage = e.toString();
       debugPrint('Login error: $e');
     }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/shared/widgets/navigation_bar_widget.dart';
 import 'package:genprd/shared/widgets/top_bar_widget.dart';
 
 class MobileBody extends StatelessWidget {
@@ -34,10 +33,6 @@ class MobileBody extends StatelessWidget {
       body: Container(
         color: Colors.black.withValues(alpha: 51), // Debug color for body area
         child: child,
-      ),
-      bottomNavigationBar: NavigationBarWidget(
-        currentIndex: currentIndex,
-        onTap: onNavTap,
       ),
     );
   }

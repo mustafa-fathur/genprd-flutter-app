@@ -4,13 +4,18 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import 'token_storage.dart';
 import '../../features/auth/services/auth_service.dart';
+import '../utils/logout_helper.dart';
+import 'package:flutter/material.dart';
 
 class ApiInterceptor {
   final AuthService _authService;
   bool _isRefreshing = false;
   final _queue = <Future Function()>[];
 
-  ApiInterceptor(this._authService);
+  // Context for navigation
+  final BuildContext? context;
+
+  ApiInterceptor(this._authService, {this.context});
 
   Future<http.Response> interceptRequest(
     Future<http.Response> Function() request,
@@ -62,8 +67,20 @@ class ApiInterceptor {
         }
         refreshAttempts++;
       }
+
+      // If refresh token fails after max attempts, force logout
+      debugPrint(
+        'Token refresh failed after $maxRefreshAttempts attempts, forcing logout',
+      );
+      await TokenStorage.clearTokens();
+
+      if (context != null) {
+        // Navigate directly to login instead of session expired screen
+        await LogoutHelper.logout(context!);
+      }
+
       throw Exception(
-        'Token refresh failed after $maxRefreshAttempts attempts',
+        'Token refresh failed after $maxRefreshAttempts attempts. You have been logged out.',
       );
     } finally {
       _isRefreshing = false;

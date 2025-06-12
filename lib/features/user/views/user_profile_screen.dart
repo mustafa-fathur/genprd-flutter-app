@@ -4,6 +4,10 @@ import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart'; // Import AppTheme
 import 'package:provider/provider.dart'; // Import Provider
 import 'package:genprd/features/auth/controllers/auth_provider.dart'; // Import AuthProvider
+import 'package:genprd/shared/config/routes/app_router.dart';
+import 'package:genprd/shared/utils/logout_helper.dart';
+import 'package:genprd/shared/services/token_storage.dart';
+import 'package:go_router/go_router.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -25,15 +29,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // Get the current theme
-    final textTheme = theme.textTheme; // Get the text theme
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final primaryColor = theme.primaryColor;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Profile & Settings'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Profile & Settings',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -86,7 +97,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         shape: BoxShape.circle,
                         color: Theme.of(
                           context,
-                        ).colorScheme.secondary.withValues(alpha: 179),
+                        ).colorScheme.secondary.withOpacity(0.7),
                       ),
                       child: CircleAvatar(
                         radius: 60,
@@ -116,9 +127,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary.withValues(
-                          alpha: 150,
-                        ), // Using secondary color with transparency
+                        color: theme.colorScheme.secondary.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -237,8 +246,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
       trailing: Icon(
         Icons.chevron_right,
-        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 102),
-      ), // Use themed color with some transparency
+        color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+      ),
       onTap: onTap,
     );
   }
@@ -246,9 +255,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildDivider(BuildContext context) {
     final theme = Theme.of(context); // Get theme for color
     return Divider(
-      color: theme.colorScheme.onSurfaceVariant.withValues(
-        alpha: 77,
-      ), // Use themed color with transparency
+      color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
       thickness: 0.5,
       indent: 64,
       endIndent: 16,
@@ -258,37 +265,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
+        // Use dialogContext to avoid context conflicts
         return AlertDialog(
           title: const Text('Logout'),
           content: const Text('Are you sure you want to logout?'),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () async {
-                Navigator.pop(context); // Close the dialog first
-
-                // Get auth provider and call logout
-                final authProvider = Provider.of<AuthProvider>(
-                  context,
-                  listen: false,
-                );
-                await authProvider.logout();
-
-                // Navigate to login screen and remove all previous routes
-                if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                    (route) => false,
-                  );
-                }
+              onPressed: () {
+                // Just close the dialog and call a separate function
+                Navigator.pop(dialogContext);
+                _performLogout();
               },
               child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),
@@ -296,5 +289,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         );
       },
     );
+  }
+
+  // Separate function to handle logout logic
+  Future<void> _performLogout() async {
+    try {
+      // 1. Clear tokens
+      await TokenStorage.clearTokens();
+
+      // 2. Get the auth provider and update state
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.forceLogout();
+
+      // 3. Navigate to login screen - use the simplest possible approach
+      if (mounted) {
+        // Use context.go directly without any fancy logic
+        context.go(AppRouter.login);
+      }
+    } catch (e) {
+      debugPrint('Error during logout: $e');
+      // Even if there's an error, try to navigate to login
+      if (mounted) {
+        context.go(AppRouter.login);
+      }
+    }
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
-import 'package:genprd/features/auth/views/login_screen.dart';
-import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
+import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:genprd/shared/views/onboarding_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -73,18 +73,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToDashboard() {
     if (!mounted) return;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-    );
+    context.go(AppRouter.dashboard);
   }
 
   void _navigateToLogin() {
     if (!mounted) return;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+    context.go(AppRouter.login);
   }
 
   void _navigateToOnboarding() {
@@ -156,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 60),
             // Loading indicator
-            CircularProgressIndicator(
+            const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ],

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/features/auth/views/login_screen.dart';
+import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/widgets/primary_button.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,21 +15,24 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   final List<Map<String, dynamic>> _onboardingData = [
     {
       'title': 'Create Professional PRDs',
-      'description': 'Generate comprehensive Product Requirement Documents with AI assistance',
+      'description':
+          'Generate comprehensive Product Requirement Documents with AI assistance',
       'icon': Icons.description,
     },
     {
       'title': 'AI-Powered Generation',
-      'description': 'Let AI hep you draft, refine, and format your product requirement',
+      'description':
+          'Let AI hep you draft, refine, and format your product requirement',
       'icon': Icons.auto_awesome,
     },
     {
       'title': 'Adjust Productivity',
-      'description': 'Adjust your productivity as a project manager by easily creating prd and delivery',
+      'description':
+          'Adjust your productivity as a project manager by easily creating prd and delivery',
       'icon': Icons.people,
     },
   ];
@@ -38,11 +43,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _navigateToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+  void _navigateToLogin() async {
+    // Mark onboarding as completed
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
+
+    if (!mounted) return;
+    context.go(AppRouter.login);
   }
 
   @override
@@ -62,13 +69,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Text(
                     'Skip',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
             ),
-            
+
             // Page view
             Expanded(
               child: PageView.builder(
@@ -88,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-            
+
             // Page indicator
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -100,21 +107,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _currentPage == index
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        _currentPage == index
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ),
             ),
-            
+
             // Next or Get Started button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: PrimaryButton(
-                text: _currentPage == _onboardingData.length - 1
-                    ? 'Get Started'
-                    : 'Next',
+                text:
+                    _currentPage == _onboardingData.length - 1
+                        ? 'Get Started'
+                        : 'Next',
                 onPressed: () {
                   if (_currentPage == _onboardingData.length - 1) {
                     _navigateToLogin();
@@ -135,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildOnboardingPage(String title, String description, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48.0), 
+      padding: const EdgeInsets.symmetric(horizontal: 48.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -146,11 +157,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               shape: BoxShape.circle,
               color: Theme.of(context).colorScheme.secondary,
             ),
-            child: Icon(
-              icon,
-              size: 60,
-              color: AppTheme.primaryColor,
-            ),
+            child: Icon(icon, size: 60, color: AppTheme.primaryColor),
           ),
           const SizedBox(height: 40),
           Text(

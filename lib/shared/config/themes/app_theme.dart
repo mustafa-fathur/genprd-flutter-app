@@ -21,12 +21,13 @@ class AppTheme {
       primary: primaryColor,
       secondary: secondaryColor,
     ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: primaryColor,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
       elevation: 0,
-      centerTitle: true,
-      titleTextStyle: const TextStyle(
-        color: Colors.white,
+      centerTitle: false,
+      iconTheme: IconThemeData(color: primaryColor),
+      titleTextStyle: TextStyle(
+        color: primaryColor,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
