@@ -265,7 +265,7 @@ class _MainLayoutState extends State<MainLayout> {
                             onTap:
                                 () => AppRouter.navigateToPrdDetail(
                                   context,
-                                  prd['id'],
+                                  prd['id'].toString(),
                                 ),
                           ),
                         )
@@ -318,7 +318,7 @@ class _MainLayoutState extends State<MainLayout> {
                             onTap:
                                 () => AppRouter.navigateToPrdDetail(
                                   context,
-                                  prd['id'],
+                                  prd['id'].toString(),
                                 ),
                           ),
                         )

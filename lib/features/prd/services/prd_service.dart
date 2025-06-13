@@ -151,4 +151,92 @@ class PrdService {
       rethrow;
     }
   }
+
+  // Archive or unarchive a PRD
+  Future<Map<String, dynamic>> archivePrd(String id) async {
+    try {
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.patch(
+          Uri.parse('${ApiConfig.baseUrl}/prd/$id/archive'),
+          headers: await ApiConfig.getHeaders(),
+        );
+      });
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['data'] ?? {};
+      } else {
+        throw Exception('Failed to archive PRD: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error archiving PRD: $e');
+      rethrow;
+    }
+  }
+
+  // Delete a PRD
+  Future<bool> deletePrd(String id) async {
+    try {
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/prd/$id'),
+          headers: await ApiConfig.getHeaders(),
+        );
+      });
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Failed to delete PRD: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error deleting PRD: $e');
+      rethrow;
+    }
+  }
+
+  // Update PRD stage
+  Future<Map<String, dynamic>> updatePrdStage(String id, String stage) async {
+    try {
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.patch(
+          Uri.parse('${ApiConfig.baseUrl}/prd/$id/stage'),
+          headers: await ApiConfig.getHeaders(),
+          body: jsonEncode({'stage': stage}),
+        );
+      });
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['data'] ?? {};
+      } else {
+        throw Exception('Failed to update PRD stage: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error updating PRD stage: $e');
+      rethrow;
+    }
+  }
+
+  // Download PRD
+  Future<Map<String, dynamic>> downloadPrd(String id) async {
+    try {
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.get(
+          Uri.parse('${ApiConfig.baseUrl}/prd/$id/download'),
+          headers: await ApiConfig.getHeaders(),
+        );
+      });
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['data'] ?? {};
+      } else {
+        throw Exception('Failed to download PRD: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error downloading PRD: $e');
+      rethrow;
+    }
+  }
 }

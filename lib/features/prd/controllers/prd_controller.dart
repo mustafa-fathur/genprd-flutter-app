@@ -98,7 +98,7 @@ class PrdController extends ChangeNotifier {
   }
 
   // Toggle pin status
-  Future<void> togglePinPrd(String id) async {
+  Future<bool> togglePinPrd(String id) async {
     try {
       final isPinned = await _prdService.togglePinPrd(id);
 
@@ -107,24 +107,123 @@ class PrdController extends ChangeNotifier {
 
       // Reload pinned PRDs
       await loadPinnedPrds();
+      await loadRecentPrds();
 
       notifyListeners();
+      return isPinned;
     } catch (e) {
       debugPrint('Error toggling pin status: $e');
+      rethrow;
+    }
+  }
+
+  // Archive PRD
+  Future<Map<String, dynamic>> archivePrd(String id) async {
+    try {
+      final result = await _prdService.archivePrd(id);
+
+      // Update the PRD stage in all lists
+      final newStage = result['document_stage'];
+      _updatePrdStage(id, newStage);
+
+      // Reload lists to ensure UI is updated
+      await loadPinnedPrds();
+      await loadRecentPrds();
+
+      notifyListeners();
+      return result;
+    } catch (e) {
+      debugPrint('Error archiving PRD: $e');
+      rethrow;
+    }
+  }
+
+  // Delete PRD
+  Future<bool> deletePrd(String id) async {
+    try {
+      final result = await _prdService.deletePrd(id);
+
+      if (result) {
+        // Remove the PRD from all lists
+        _allPrds.removeWhere((prd) => prd['id'].toString() == id);
+        _pinnedPrds.removeWhere((prd) => prd['id'].toString() == id);
+        _recentPrds.removeWhere((prd) => prd['id'].toString() == id);
+
+        notifyListeners();
+      }
+
+      return result;
+    } catch (e) {
+      debugPrint('Error deleting PRD: $e');
+      rethrow;
+    }
+  }
+
+  // Update PRD stage
+  Future<Map<String, dynamic>> updatePrdStage(String id, String stage) async {
+    try {
+      final result = await _prdService.updatePrdStage(id, stage);
+
+      // Update the PRD stage in all lists
+      final newStage = result['document_stage'];
+      _updatePrdStage(id, newStage);
+
+      notifyListeners();
+      return result;
+    } catch (e) {
+      debugPrint('Error updating PRD stage: $e');
+      rethrow;
+    }
+  }
+
+  // Download PRD
+  Future<Map<String, dynamic>> downloadPrd(String id) async {
+    try {
+      return await _prdService.downloadPrd(id);
+    } catch (e) {
+      debugPrint('Error downloading PRD: $e');
+      rethrow;
     }
   }
 
   // Helper method to update pin status across lists
   void _updatePrdPinStatus(String id, bool isPinned) {
     for (int i = 0; i < _allPrds.length; i++) {
-      if (_allPrds[i]['id'] == id) {
+      if (_allPrds[i]['id'].toString() == id) {
         _allPrds[i]['is_pinned'] = isPinned;
       }
     }
 
     for (int i = 0; i < _recentPrds.length; i++) {
-      if (_recentPrds[i]['id'] == id) {
+      if (_recentPrds[i]['id'].toString() == id) {
         _recentPrds[i]['is_pinned'] = isPinned;
+      }
+    }
+
+    for (int i = 0; i < _pinnedPrds.length; i++) {
+      if (_pinnedPrds[i]['id'].toString() == id) {
+        _pinnedPrds[i]['is_pinned'] = isPinned;
+      }
+    }
+  }
+
+  // Helper method to update stage across lists
+  void _updatePrdStage(String id, String stage) {
+    for (int i = 0; i < _allPrds.length; i++) {
+      if (_allPrds[i]['id'].toString() == id) {
+        _allPrds[i]['document_stage'] = stage;
+      }
+    }
+
+    for (int i = 0; i < _recentPrds.length; i++) {
+      if (_recentPrds[i]['id'].toString() == id) {
+        _recentPrds[i]['document_stage'] = stage;
+      }
+    }
+
+    for (int i = 0; i < _pinnedPrds.length; i++) {
+      if (_pinnedPrds[i]['id'].toString() == id) {
+        _pinnedPrds[i]['document_stage'] = stage;
       }
     }
   }

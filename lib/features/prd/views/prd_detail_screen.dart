@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:genprd/features/prd/controllers/prd_controller.dart';
+import 'package:genprd/features/prd/services/prd_service.dart';
 import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/widgets/loading_widget.dart';
+import 'package:intl/intl.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String prdId;
@@ -14,59 +20,40 @@ class PrdDetailScreen extends StatefulWidget {
 class _PrdDetailScreenState extends State<PrdDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final PrdService _prdService = PrdService();
 
-  // Add a map to store PRD data
-  late Map<String, dynamic> _prdData;
+  // State variables
+  Map<String, dynamic>? _prdData;
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchPrdData();
+  }
 
-    // Initialize PRD data - in a real app, this would come from an API or database based on prdId
-    _prdData = {
-      'id': widget.prdId,
-      'title': 'PRD ${widget.prdId}', // Placeholder title based on ID
-      'version': '0.8.2',
-      'owner': 'Maha',
-      'stage': 'Draft',
-      'startDate': '2025-01-01',
-      'endDate': '2025-12-31',
-      'overview':
-          'This is a project overview for PRD ${widget.prdId}. It describes the purpose, goals, and scope of the project.',
-      'problemStatements':
-          'The current system has several limitations:\n\n'
-          '1. Performance issues with large datasets\n'
-          '2. Limited mobile support\n'
-          '3. Lack of integration with other systems\n'
-          '4. Poor user experience',
-      'objectives':
-          '1. Improve system performance by 50%\n'
-          '2. Develop a responsive mobile interface\n'
-          '3. Implement API integrations with key systems\n'
-          '4. Redesign the user interface for better UX',
-      'stakeholders': ['John Doe', 'Jane Smith'],
-      'developers': ['Mustafa Fathur Rahman', 'Fulana'],
-      'darci': {
-        'decisionMaker': 'John Doe',
-        'accountable': 'Jane Smith',
-        'responsible': ['Development Team'],
-        'consulted': ['UX Team', 'QA Team'],
-        'informed': ['Stakeholders'],
-      },
-      'successMetrics':
-          '1. 50% improvement in system performance\n'
-          '2. 30% increase in mobile usage\n'
-          '3. 25% reduction in support tickets\n'
-          '4. 90% user satisfaction rating',
-      'timeline':
-          'January 1, 2025: Project Kickoff\n\n'
-          'January 15, 2025: Requirements Finalization\n\n'
-          'February 1, 2025: Design Phase Completion\n\n'
-          'March 1, 2025: Development Phase Completion\n\n'
-          'March 15, 2025: Testing Phase\n\n'
-          'April 1, 2025: Project Launch',
-    };
+  Future<void> _fetchPrdData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final data = await _prdService.getPrdById(widget.prdId);
+
+      setState(() {
+        _prdData = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      debugPrint('Error fetching PRD data: $e');
+    }
   }
 
   @override
@@ -77,23 +64,94 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show loading state
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('PRD Details'),
+          leading: IconButton(
+            icon: const Icon(CupertinoIcons.back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(
+          child: LoadingWidget(message: 'Loading PRD details...'),
+        ),
+      );
+    }
+
+    // Show error state
+    if (_error != null || _prdData == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('PRD Details'),
+          leading: IconButton(
+            icon: const Icon(CupertinoIcons.back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.exclamationmark_circle,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load PRD details',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error ?? 'Unknown error',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _fetchPrdData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final bool isPinned = _prdData!['is_pinned'] == true;
+    final String stage = _prdData!['document_stage'] ?? 'draft';
+    final bool isArchived = stage == 'archived';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_prdData['title']),
+        title: Text(_prdData!['product_name'] ?? 'PRD Details'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(CupertinoIcons.back),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // Pin/Unpin button
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(
+              isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
+              color: isPinned ? Theme.of(context).primaryColor : null,
+            ),
+            tooltip: isPinned ? 'Unpin PRD' : 'Pin PRD',
+            onPressed: _togglePinStatus,
+          ),
+          // Edit button
+          IconButton(
+            icon: const Icon(CupertinoIcons.pencil),
             tooltip: 'Edit PRD',
             onPressed: () {
               // Navigate to edit screen with full prdData
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PrdEditScreen(prdData: _prdData),
+                  builder: (context) => PrdEditScreen(prdData: _prdData!),
                 ),
               ).then((updatedData) {
                 if (updatedData != null) {
@@ -104,19 +162,49 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
               });
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
+          // More options menu
+          PopupMenuButton<String>(
+            icon: const Icon(CupertinoIcons.ellipsis_vertical),
             tooltip: 'More options',
-            onPressed: () {
-              _showOptionsMenu(context);
-            },
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'download',
+                    child: _buildPopupMenuItem(
+                      CupertinoIcons.arrow_down_doc,
+                      'Download PDF',
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'archive',
+                    child: _buildPopupMenuItem(
+                      isArchived
+                          ? CupertinoIcons.tray_arrow_up
+                          : CupertinoIcons.archivebox,
+                      isArchived ? 'Unarchive' : 'Archive',
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: _buildPopupMenuItem(
+                      CupertinoIcons.trash,
+                      'Delete',
+                      isDestructive: true,
+                    ),
+                  ),
+                ],
+            onSelected: _handleMenuAction,
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          labelColor: Theme.of(context).primaryColor,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Theme.of(context).primaryColor,
           indicatorWeight: 3.0,
           tabs: const [Tab(text: 'Overview'), Tab(text: 'Team & Roles')],
         ),
@@ -124,7 +212,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
       ),
       body: Column(
         children: [
-          // Status bar
+          // Status bar with stage selector
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -132,6 +220,13 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
               border: Border(
                 bottom: BorderSide(color: Colors.grey.shade200, width: 1),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -140,14 +235,14 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Version ${_prdData['version']}',
+                        'Version ${_prdData!['document_version'] ?? '1.0'}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Last Updated: 01/01/2025',
+                        'Last Updated: ${_formatDate(_prdData!['updated_at'])}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -155,30 +250,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        AppTheme.badgeColors[_prdData['stage']]?.withOpacity(
-                          0.15,
-                        ) ??
-                        Colors.grey.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    _prdData['stage'],
-                    style: TextStyle(
-                      color:
-                          AppTheme.badgeColors[_prdData['stage']] ??
-                          Colors.grey,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
+                _buildStageDropdown(),
               ],
             ),
           ),
@@ -192,6 +264,25 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to edit screen with full prdData
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PrdEditScreen(prdData: _prdData!),
+            ),
+          ).then((updatedData) {
+            if (updatedData != null) {
+              setState(() {
+                _prdData = updatedData;
+              });
+            }
+          });
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(CupertinoIcons.pencil, color: Colors.white),
+      ),
     );
   }
 
@@ -203,23 +294,40 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
         children: [
           _buildSectionHeader('PRD Identity'),
           _buildInfoCard([
-            _buildInfoRow('Product Name:', _prdData['title']),
-            _buildInfoRow('Document Version:', _prdData['version']),
-            _buildInfoRow('Document Owner:', _prdData['owner']),
-            _buildInfoRow('Created Date:', '01/01/2025'),
+            _buildInfoRow(
+              'Product Name:',
+              _prdData!['product_name'] ?? 'Untitled',
+            ),
+            _buildInfoRow(
+              'Document Version:',
+              _prdData!['document_version'] ?? '1.0',
+            ),
+            _buildInfoRow('Document Owner:', _getDocumentOwners()),
+            _buildInfoRow(
+              'Created Date:',
+              _formatDate(_prdData!['created_at']),
+            ),
           ]),
 
           const SizedBox(height: 20),
           _buildSectionHeader('Project Overview'),
-          _buildContentCard(_prdData['overview']),
+          _buildContentCard(
+            _prdData!['project_overview'] ?? 'No overview available',
+          ),
 
-          const SizedBox(height: 20),
-          _buildSectionHeader('Problem Statements'),
-          _buildContentCard(_prdData['problemStatements']),
+          // Problem Statements from generated sections if available
+          if (_hasGeneratedSection('overview')) ...[
+            const SizedBox(height: 20),
+            _buildSectionHeader('Problem Statements'),
+            _buildContentCard(_getOverviewSectionContent('Problem Statement')),
+          ],
 
-          const SizedBox(height: 20),
-          _buildSectionHeader('Objectives'),
-          _buildContentCard(_prdData['objectives']),
+          // Objectives from generated sections if available
+          if (_hasGeneratedSection('overview')) ...[
+            const SizedBox(height: 20),
+            _buildSectionHeader('Objectives'),
+            _buildContentCard(_getOverviewSectionContent('Objectives')),
+          ],
         ],
       ),
     );
@@ -233,55 +341,38 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
         children: [
           _buildSectionHeader('Team Members'),
           _buildInfoCard([
-            _buildInfoRow('Document Owner:', _prdData['owner']),
-            _buildInfoRow('Stakeholders:', _prdData['stakeholders'].join(', ')),
-            _buildInfoRow('Developers:', _prdData['developers'].join(', ')),
+            _buildInfoRow('Document Owner:', _getDocumentOwners()),
+            _buildInfoRow(
+              'Stakeholders:',
+              _getListAsString(_prdData!['stakeholders']),
+            ),
+            _buildInfoRow(
+              'Developers:',
+              _getListAsString(_prdData!['developers']),
+            ),
           ]),
 
-          const SizedBox(height: 20),
-          _buildSectionHeader('Timeline'),
-          _buildContentCard(_prdData['timeline']),
+          // Timeline section
+          if (_prdData!['timeline'] != null &&
+              (_prdData!['timeline'] as List).isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _buildSectionHeader('Timeline'),
+            _buildTimelineSection(),
+          ],
 
-          const SizedBox(height: 20),
-          _buildSectionHeader('Success Metrics'),
-          _buildContentCard(_prdData['successMetrics']),
+          // Success Metrics from generated sections if available
+          if (_hasGeneratedSection('success_metrics')) ...[
+            const SizedBox(height: 20),
+            _buildSectionHeader('Success Metrics'),
+            _buildSuccessMetricsSection(),
+          ],
 
-          const SizedBox(height: 20),
-          _buildSectionHeader('DARCI Roles'),
-
-          _buildDarciRoleCard(
-            'Decider',
-            _prdData['darci']['decisionMaker'],
-            'Responsible for making final decisions on project direction and scope.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildDarciRoleCard(
-            'Accountable',
-            _prdData['darci']['accountable'],
-            'Accountable for the successful delivery of the project.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildDarciRoleCard(
-            'Responsible',
-            _prdData['darci']['responsible'].join(', '),
-            'Responsible for implementing the project requirements.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildDarciRoleCard(
-            'Consulted',
-            _prdData['darci']['consulted'].join(', '),
-            'Consulted for expertise in specific areas of the project.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildDarciRoleCard(
-            'Informed',
-            _prdData['darci']['informed'].join(', '),
-            'Kept informed about project progress and milestones.',
-          ),
+          // DARCI Roles section
+          if (_prdData!['darci_roles'] != null) ...[
+            const SizedBox(height: 20),
+            _buildSectionHeader('DARCI Roles'),
+            _buildDarciRolesSection(),
+          ],
         ],
       ),
     );
@@ -298,7 +389,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
           title,
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
+            color: theme.primaryColor,
           ),
         ),
         const SizedBox(height: 6),
@@ -357,13 +448,184 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
               label,
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
+                color: theme.primaryColor,
               ),
             ),
           ),
           Expanded(child: Text(value, style: textTheme.bodyMedium)),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimelineSection() {
+    final timeline = _prdData!['timeline'] as List;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children:
+            timeline.map<Widget>((item) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['time_period'] ?? 'No date specified',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item['activity'] ?? 'No activity specified',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    if (item['pic'] != null &&
+                        item['pic'].toString().isNotEmpty)
+                      Text(
+                        'PIC: ${item['pic']}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSuccessMetricsSection() {
+    final metrics =
+        _prdData!['generated_sections']?['success_metrics']?['metrics']
+            as List?;
+
+    if (metrics == null || metrics.isEmpty) {
+      return _buildContentCard('No success metrics defined');
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children:
+            metrics.map<Widget>((metric) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      metric['name'] ?? 'Unnamed Metric',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (metric['definition'] != null)
+                      Text(
+                        metric['definition'],
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (metric['current'] != null)
+                          Text(
+                            'Current: ${metric['current']}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        const SizedBox(width: 16),
+                        if (metric['target'] != null)
+                          Text(
+                            'Target: ${metric['target']}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildDarciRolesSection() {
+    final darciRoles = _prdData!['darci_roles'] as Map<String, dynamic>?;
+
+    if (darciRoles == null || darciRoles.isEmpty) {
+      return _buildContentCard('No DARCI roles defined');
+    }
+
+    return Column(
+      children: [
+        if (darciRoles['decider'] != null)
+          _buildDarciRoleCard(
+            'Decider',
+            _getListAsString(darciRoles['decider']),
+            'Responsible for making final decisions on project direction and scope.',
+          ),
+        const SizedBox(height: 12),
+
+        if (darciRoles['accountable'] != null)
+          _buildDarciRoleCard(
+            'Accountable',
+            _getListAsString(darciRoles['accountable']),
+            'Accountable for the successful delivery of the project.',
+          ),
+        const SizedBox(height: 12),
+
+        if (darciRoles['responsible'] != null)
+          _buildDarciRoleCard(
+            'Responsible',
+            _getListAsString(darciRoles['responsible']),
+            'Responsible for implementing the project requirements.',
+          ),
+        const SizedBox(height: 12),
+
+        if (darciRoles['consulted'] != null)
+          _buildDarciRoleCard(
+            'Consulted',
+            _getListAsString(darciRoles['consulted']),
+            'Consulted for expertise in specific areas of the project.',
+          ),
+        const SizedBox(height: 12),
+
+        if (darciRoles['informed'] != null)
+          _buildDarciRoleCard(
+            'Informed',
+            _getListAsString(darciRoles['informed']),
+            'Kept informed about project progress and milestones.',
+          ),
+      ],
     );
   }
 
@@ -386,7 +648,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
             role,
             style: textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
+              color: theme.primaryColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -404,142 +666,281 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     );
   }
 
-  void _showOptionsMenu(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildStageDropdown() {
+    final String stage = _prdData!['document_stage'] ?? 'draft';
+    final Color badgeColor = _getStageBadgeColor(stage);
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Container(
+      decoration: BoxDecoration(
+        color: badgeColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
       ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Icon(Icons.edit, color: theme.colorScheme.primary),
-                title: Text('Edit PRD', style: theme.textTheme.titleSmall),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to edit screen with full prdData
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PrdEditScreen(prdData: _prdData),
-                    ),
-                  ).then((updatedData) {
-                    if (updatedData != null) {
-                      setState(() {
-                        _prdData = updatedData;
-                      });
-                    }
-                  });
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.download, color: theme.colorScheme.primary),
-                title: Text('Download PRD', style: theme.textTheme.titleSmall),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Downloading PRD...'),
-                      backgroundColor: theme.colorScheme.primary,
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.archive, color: theme.colorScheme.primary),
-                title: Text('Archive PRD', style: theme.textTheme.titleSmall),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('PRD archived'),
-                      backgroundColor: theme.colorScheme.primary,
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: Text(
-                  'Delete PRD',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: Colors.red,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteConfirmationDialog(context);
-                },
-              ),
-            ],
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: stage,
+          isDense: true,
+          borderRadius: BorderRadius.circular(8),
+          icon: Icon(CupertinoIcons.chevron_down, size: 14, color: badgeColor),
+          style: TextStyle(
+            color: badgeColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
           ),
-        );
-      },
+          items: [
+            DropdownMenuItem(
+              value: 'draft',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('Draft'),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'inprogress',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('In Progress'),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'finished',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('Finished'),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'archived',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('Archived'),
+              ),
+            ),
+          ],
+          onChanged: _updatePrdStage,
+        ),
+      ),
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildPopupMenuItem(
+    IconData icon,
+    String label, {
+    bool isDestructive = false,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: isDestructive ? Colors.red : null),
+        const SizedBox(width: 8),
+        Text(label, style: TextStyle(color: isDestructive ? Colors.red : null)),
+      ],
+    );
+  }
 
+  void _handleMenuAction(String action) async {
+    final String id = widget.prdId;
+    final prdController = Provider.of<PrdController>(context, listen: false);
+
+    switch (action) {
+      case 'download':
+        try {
+          final result = await prdController.downloadPrd(id);
+          _showSnackBar('PDF generated successfully. Check your downloads.');
+        } catch (e) {
+          _showSnackBar('Failed to download PRD: $e', isError: true);
+        }
+        break;
+      case 'archive':
+        try {
+          final bool isArchived = _prdData!['document_stage'] == 'archived';
+          final result = await prdController.archivePrd(id);
+          _showSnackBar(
+            isArchived
+                ? 'PRD unarchived successfully'
+                : 'PRD archived successfully',
+          );
+          // Update local state
+          setState(() {
+            _prdData!['document_stage'] = result['document_stage'];
+          });
+        } catch (e) {
+          _showSnackBar('Failed to archive PRD: $e', isError: true);
+        }
+        break;
+      case 'delete':
+        _showDeleteConfirmationDialog();
+        break;
+    }
+  }
+
+  void _showDeleteConfirmationDialog() {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Delete PRD',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete PRD'),
+            content: Text(
+              'Are you sure you want to delete "${_prdData!['product_name']}"? '
+              'This action cannot be undone.',
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _deletePrd();
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          content: Text(
-            'Are you sure you want to delete "${_prdData['title']}"? This action cannot be undone.',
-            style: theme.textTheme.bodyMedium,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // Go back to PRD list
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('PRD deleted'),
-                    backgroundColor: Colors.red.shade700,
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
     );
+  }
+
+  Future<void> _deletePrd() async {
+    final prdController = Provider.of<PrdController>(context, listen: false);
+    try {
+      final result = await prdController.deletePrd(widget.prdId);
+      if (result) {
+        _showSnackBar('PRD deleted successfully');
+        // Navigate back to list screen
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _showSnackBar('Failed to delete PRD: $e', isError: true);
+    }
+  }
+
+  Future<void> _togglePinStatus() async {
+    final prdController = Provider.of<PrdController>(context, listen: false);
+    try {
+      final bool isPinned = await prdController.togglePinPrd(widget.prdId);
+      _showSnackBar(
+        isPinned ? 'PRD pinned successfully' : 'PRD unpinned successfully',
+      );
+      // Update local state
+      setState(() {
+        _prdData!['is_pinned'] = isPinned;
+      });
+    } catch (e) {
+      _showSnackBar('Failed to update pin status: $e', isError: true);
+    }
+  }
+
+  Future<void> _updatePrdStage(String? newStage) async {
+    if (newStage == null || newStage == _prdData!['document_stage']) return;
+
+    final prdController = Provider.of<PrdController>(context, listen: false);
+    try {
+      final result = await prdController.updatePrdStage(widget.prdId, newStage);
+      _showSnackBar('PRD stage updated to ${_getDisplayStage(newStage)}');
+      // Update local state
+      setState(() {
+        _prdData!['document_stage'] = newStage;
+      });
+    } catch (e) {
+      _showSnackBar('Failed to update PRD stage: $e', isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : AppTheme.primaryColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _getDisplayStage(String stage) {
+    switch (stage.toLowerCase()) {
+      case 'inprogress':
+        return 'In Progress';
+      case 'draft':
+        return 'Draft';
+      case 'finished':
+        return 'Finished';
+      case 'archived':
+        return 'Archived';
+      default:
+        return stage;
+    }
+  }
+
+  // Helper methods for handling data
+  String _getDocumentOwners() {
+    if (_prdData!['document_owners'] == null) return 'Not specified';
+
+    if (_prdData!['document_owners'] is List) {
+      return (_prdData!['document_owners'] as List)
+          .map((item) => item.toString())
+          .join(', ');
+    }
+
+    return _prdData!['document_owners'].toString();
+  }
+
+  String _getListAsString(dynamic list) {
+    if (list == null) return 'Not specified';
+
+    if (list is List) {
+      return list.map((item) => item.toString()).join(', ');
+    }
+
+    return list.toString();
+  }
+
+  bool _hasGeneratedSection(String sectionName) {
+    return _prdData!['generated_sections'] != null &&
+        _prdData!['generated_sections'][sectionName] != null;
+  }
+
+  String _getOverviewSectionContent(String title) {
+    if (!_hasGeneratedSection('overview')) return 'No content available';
+
+    final sections =
+        _prdData!['generated_sections']['overview']['sections'] as List?;
+    if (sections == null || sections.isEmpty) return 'No content available';
+
+    // Find section with matching title
+    for (final section in sections) {
+      if (section['title'].toString().contains(title)) {
+        return section['content'] ?? 'No content available';
+      }
+    }
+
+    return 'No content available';
+  }
+
+  String _formatDate(dynamic dateString) {
+    if (dateString == null) return 'Unknown date';
+
+    try {
+      final DateTime date = DateTime.parse(dateString.toString());
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+
+  Color _getStageBadgeColor(String? stage) {
+    switch (stage?.toLowerCase()) {
+      case 'draft':
+        return AppTheme.badgeColors['Draft'] ?? const Color(0xFFF59E0B);
+      case 'inprogress':
+        return AppTheme.badgeColors['In Progress'] ?? const Color(0xFF2563EB);
+      case 'finished':
+        return AppTheme.badgeColors['Finished'] ?? const Color(0xFF10B981);
+      case 'archived':
+        return AppTheme.badgeColors['Archived'] ?? const Color(0xFF6B7280);
+      default:
+        return Colors.grey;
+    }
   }
 }

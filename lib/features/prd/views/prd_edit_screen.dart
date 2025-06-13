@@ -2,25 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/cupertino.dart';
 
 class PrdEditScreen extends StatefulWidget {
   final Map<String, dynamic> prdData;
-  
-  const PrdEditScreen({
-    super.key,
-    required this.prdData,
-  });
+
+  const PrdEditScreen({super.key, required this.prdData});
 
   @override
   State<PrdEditScreen> createState() => _PrdEditScreenState();
 }
 
-class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProviderStateMixin {
+class _PrdEditScreenState extends State<PrdEditScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isDirty = false;
-  
+
   // Basic Info controllers
   late TextEditingController _titleController;
   late TextEditingController _versionController;
@@ -28,13 +27,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
   late TextEditingController _createdDateController;
   late DateTime _startDate;
   late DateTime _endDate;
-  
+
   // Project Overview controllers
   late TextEditingController _overviewController;
   late TextEditingController _problemStatementsController;
   late TextEditingController _objectivesController;
   late TextEditingController _timelineController;
-  
+
   // Team & Roles controllers
   late List<String> _stakeholders;
   late List<String> _developers;
@@ -43,7 +42,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
   late List<String> _responsible;
   late List<String> _consulted;
   late List<String> _informed;
-  
+
   // Project Details controllers
   late TextEditingController _successMetricsController;
   late TextEditingController _userStoriesController;
@@ -72,33 +71,50 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     _tabController = TabController(length: 3, vsync: this);
     _initializeControllers();
   }
-  
+
   void _initializeControllers() {
     // Basic Info
-    _titleController = TextEditingController(text: widget.prdData['title'] ?? '');
-    _versionController = TextEditingController(text: widget.prdData['version'] ?? '0.1.0');
-    _ownerController = TextEditingController(text: widget.prdData['owner'] ?? '');
+    _titleController = TextEditingController(
+      text: widget.prdData['title'] ?? '',
+    );
+    _versionController = TextEditingController(
+      text: widget.prdData['version'] ?? '0.1.0',
+    );
+    _ownerController = TextEditingController(
+      text: widget.prdData['owner'] ?? '',
+    );
     _createdDateController = TextEditingController(
-        text: DateFormat('MM/dd/yyyy').format(DateTime.now()));
-    
+      text: DateFormat('MM/dd/yyyy').format(DateTime.now()),
+    );
+
     // Dates
-    _startDate = widget.prdData['startDate'] != null 
-        ? DateTime.parse(widget.prdData['startDate']) 
-        : DateTime.now();
-    _endDate = widget.prdData['endDate'] != null 
-        ? DateTime.parse(widget.prdData['endDate']) 
-        : DateTime.now().add(const Duration(days: 30));
-    
+    _startDate =
+        widget.prdData['startDate'] != null
+            ? DateTime.parse(widget.prdData['startDate'])
+            : DateTime.now();
+    _endDate =
+        widget.prdData['endDate'] != null
+            ? DateTime.parse(widget.prdData['endDate'])
+            : DateTime.now().add(const Duration(days: 30));
+
     // Project Overview
-    _overviewController = TextEditingController(text: widget.prdData['overview'] ?? '');
-    _problemStatementsController = TextEditingController(text: widget.prdData['problemStatements'] ?? '');
-    _objectivesController = TextEditingController(text: widget.prdData['objectives'] ?? '');
-    _timelineController = TextEditingController(text: widget.prdData['timeline'] ?? '');
-    
+    _overviewController = TextEditingController(
+      text: widget.prdData['overview'] ?? '',
+    );
+    _problemStatementsController = TextEditingController(
+      text: widget.prdData['problemStatements'] ?? '',
+    );
+    _objectivesController = TextEditingController(
+      text: widget.prdData['objectives'] ?? '',
+    );
+    _timelineController = TextEditingController(
+      text: widget.prdData['timeline'] ?? '',
+    );
+
     // Team & Roles
     _stakeholders = List<String>.from(widget.prdData['stakeholders'] ?? []);
     _developers = List<String>.from(widget.prdData['developers'] ?? []);
-    
+
     // DARCI roles
     final darci = widget.prdData['darci'] ?? {};
     _decisionMaker = darci['decisionMaker'];
@@ -106,16 +122,28 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     _responsible = List<String>.from(darci['responsible'] ?? []);
     _consulted = List<String>.from(darci['consulted'] ?? []);
     _informed = List<String>.from(darci['informed'] ?? []);
-    
+
     // Project Details
-    _successMetricsController = TextEditingController(text: widget.prdData['successMetrics'] ?? '');
-    _userStoriesController = TextEditingController(text: widget.prdData['userStories'] ?? '');
-    _uiuxLinksController = TextEditingController(text: widget.prdData['uiuxLinks'] ?? '');
-    _referencesController = TextEditingController(text: widget.prdData['references'] ?? '');
-    _additionalNotesController = TextEditingController(text: widget.prdData['additionalNotes'] ?? '');
-    _constraintsController = TextEditingController(text: widget.prdData['constraints'] ?? '');
+    _successMetricsController = TextEditingController(
+      text: widget.prdData['successMetrics'] ?? '',
+    );
+    _userStoriesController = TextEditingController(
+      text: widget.prdData['userStories'] ?? '',
+    );
+    _uiuxLinksController = TextEditingController(
+      text: widget.prdData['uiuxLinks'] ?? '',
+    );
+    _referencesController = TextEditingController(
+      text: widget.prdData['references'] ?? '',
+    );
+    _additionalNotesController = TextEditingController(
+      text: widget.prdData['additionalNotes'] ?? '',
+    );
+    _constraintsController = TextEditingController(
+      text: widget.prdData['constraints'] ?? '',
+    );
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -135,11 +163,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     _constraintsController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final initialDate = isStartDate ? _startDate : _endDate;
     final firstDate = isStartDate ? DateTime(2020) : _startDate;
-    
+
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -159,7 +187,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
         );
       },
     );
-    
+
     if (pickedDate != null) {
       setState(() {
         _isDirty = true;
@@ -174,15 +202,15 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       });
     }
   }
-  
+
   void _showPersonnelSelectionDialog({
-    required String title, 
+    required String title,
     required List<String> selectedPersonnel,
     required Function(List<String>) onSave,
     bool singleSelect = false,
   }) {
     final tempSelection = List<String>.from(selectedPersonnel);
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -195,30 +223,33 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 height: 300,
                 child: ListView(
                   shrinkWrap: true,
-                  children: _personnel.map((person) {
-                    final isSelected = tempSelection.contains(person['name']);
-                    return CheckboxListTile(
-                      title: Text(person['name']),
-                      subtitle: Text(person['role']),
-                      value: isSelected,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          if (singleSelect) {
-                            tempSelection.clear();
-                            if (value == true) {
-                              tempSelection.add(person['name']);
-                            }
-                          } else {
-                            if (value == true) {
-                              tempSelection.add(person['name']);
-                            } else {
-                              tempSelection.remove(person['name']);
-                            }
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
+                  children:
+                      _personnel.map((person) {
+                        final isSelected = tempSelection.contains(
+                          person['name'],
+                        );
+                        return CheckboxListTile(
+                          title: Text(person['name']),
+                          subtitle: Text(person['role']),
+                          value: isSelected,
+                          onChanged: (value) {
+                            setDialogState(() {
+                              if (singleSelect) {
+                                tempSelection.clear();
+                                if (value == true) {
+                                  tempSelection.add(person['name']);
+                                }
+                              } else {
+                                if (value == true) {
+                                  tempSelection.add(person['name']);
+                                } else {
+                                  tempSelection.remove(person['name']);
+                                }
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                 ),
               ),
               actions: [
@@ -243,16 +274,16 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       },
     );
   }
-  
+
   Future<void> _saveChanges() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
-      
+
       // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // Collect all the updated data
       final updatedData = {
         'title': _titleController.text,
@@ -281,19 +312,19 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
         'additionalNotes': _additionalNotesController.text,
         'constraints': _constraintsController.text,
         'stage': widget.prdData['stage'] ?? 'In Progress',
-        
+
         // Preserve any other fields that might exist in the original data
         ...widget.prdData,
       };
-      
+
       setState(() {
         _isLoading = false;
         _isDirty = false;
       });
-      
+
       if (mounted) {
         Navigator.pop(context, updatedData);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('PRD updated successfully'),
@@ -303,37 +334,40 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       }
     }
   }
-  
+
   Future<bool> _onWillPop() async {
     if (!_isDirty) {
       return true;
     }
-    
+
     if (!mounted) return false;
-    
+
     // Use context safely
     final result = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(false);
-            },
-            child: const Text('Cancel'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Discard changes?'),
+            content: const Text(
+              'You have unsaved changes. Are you sure you want to discard them?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(false);
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(true);
+                },
+                child: const Text('Discard'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(true);
-            },
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
     );
-    
+
     return result ?? false;
   }
 
@@ -343,16 +377,17 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       canPop: !_isDirty,
       onPopInvoked: (didPop) async {
         if (didPop) return;
-        
+
         final shouldPop = await _onWillPop();
         if (shouldPop && mounted) {
           Navigator.of(context).pop();
         }
-      },      child: Scaffold(
+      },
+      child: Scaffold(
         appBar: AppBar(
           title: const Text('Edit PRD'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(CupertinoIcons.back),
             onPressed: () {
               _onWillPop().then((canPop) {
                 if (canPop) {
@@ -382,84 +417,93 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               Tab(text: 'Team & Roles'),
               Tab(text: 'Project Details'),
             ],
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 3,
           ),
           elevation: 0,
         ),
-        body: _isLoading
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Saving changes...',
-                      style: TextStyle(color: Theme.of(context).primaryColor),
-                    ),
-                  ],
-                ),
-              )
-            : Form(
-                key: _formKey,
-                onChanged: () {
-                  if (!_isDirty) {
-                    setState(() {
-                      _isDirty = true;
-                    });
-                  }
-                },
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildOverviewTab(),
-                    _buildTeamRolesTab(),
-                    _buildProjectDetailsTab(),
-                  ],
-                ),
-              ),
-        floatingActionButton: _isDirty
-            ? FloatingActionButton.extended(
-                onPressed: _saveChanges,
-                icon: const Icon(Icons.save),
-                label: const Text('Save'),
-                backgroundColor: Theme.of(context).primaryColor,
-              )
-            : null,
-        bottomNavigationBar: _isDirty
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Color.alphaBlend(
-                  Theme.of(context).primaryColor.withAlpha(25),
-                  Colors.white,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'You have unsaved changes.',
-                        style: TextStyle(fontSize: 14),
+        body:
+            _isLoading
+                ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Saving changes...',
+                        style: TextStyle(color: Theme.of(context).primaryColor),
                       ),
-                    ),
-                    ElevatedButton(
-                      onPressed: _saveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                      ),
-                      child: const Text('Save Changes'),
-                    ),
-                  ],
+                    ],
+                  ),
+                )
+                : Form(
+                  key: _formKey,
+                  onChanged: () {
+                    if (!_isDirty) {
+                      setState(() {
+                        _isDirty = true;
+                      });
+                    }
+                  },
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildOverviewTab(),
+                      _buildTeamRolesTab(),
+                      _buildProjectDetailsTab(),
+                    ],
+                  ),
                 ),
-              )
-            : null,
+        floatingActionButton:
+            _isDirty
+                ? FloatingActionButton.extended(
+                  onPressed: _saveChanges,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save'),
+                  backgroundColor: Theme.of(context).primaryColor,
+                )
+                : null,
+        bottomNavigationBar:
+            _isDirty
+                ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  color: Color.alphaBlend(
+                    Theme.of(context).primaryColor.withAlpha(25),
+                    Colors.white,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'You have unsaved changes.',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: _saveChanges,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                        ),
+                        child: const Text('Save Changes'),
+                      ),
+                    ],
+                  ),
+                )
+                : null,
       ),
     );
   }
-  
+
   Widget _buildOverviewTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -471,7 +515,10 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('PRD Identity', icon: Icons.article_outlined),
+                _buildSectionHeader(
+                  'PRD Identity',
+                  icon: Icons.article_outlined,
+                ),
                 _buildTextField(
                   controller: _titleController,
                   label: 'Product Name',
@@ -486,7 +533,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   prefixIcon: Icons.title,
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -512,7 +559,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Created Date
                 _buildTextField(
                   controller: _createdDateController,
@@ -525,9 +572,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Project Timeline Card
           _buildCardContainer(
             child: Column(
@@ -556,15 +603,18 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Project Overview Card
           _buildCardContainer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('Project Overview', icon: Icons.visibility_outlined),
+                _buildSectionHeader(
+                  'Project Overview',
+                  icon: Icons.visibility_outlined,
+                ),
                 _buildTextField(
                   controller: _overviewController,
                   label: 'Project Overview',
@@ -580,15 +630,18 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Problem Statements Card
           _buildCardContainer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('Problem Statements', icon: Icons.error_outline),
+                _buildSectionHeader(
+                  'Problem Statements',
+                  icon: Icons.error_outline,
+                ),
                 _buildTextField(
                   controller: _problemStatementsController,
                   label: 'Problem Statements',
@@ -598,15 +651,18 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Objectives Card
           _buildCardContainer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('Objectives', icon: Icons.check_circle_outline),
+                _buildSectionHeader(
+                  'Objectives',
+                  icon: Icons.check_circle_outline,
+                ),
                 _buildTextField(
                   controller: _objectivesController,
                   label: 'Objectives',
@@ -616,9 +672,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Timeline Details Card
           _buildCardContainer(
             child: Column(
@@ -634,13 +690,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
-  
+
   Widget _buildTeamRolesTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -653,11 +709,12 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionHeader('Team Members', icon: Icons.groups),
-                
+
                 _buildTeamSection(
                   title: 'Stakeholders',
                   icon: Icons.people_outline,
-                  description: 'People who have interest or concern in the project',
+                  description:
+                      'People who have interest or concern in the project',
                   selectedMembers: _stakeholders,
                   onTap: () {
                     _showPersonnelSelectionDialog(
@@ -672,7 +729,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTeamSection(
                   title: 'Developers',
                   icon: Icons.code,
@@ -693,28 +750,32 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // DARCI Matrix Card
           _buildCardContainer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionHeader('DARCI Matrix', icon: Icons.account_tree),
-                
+
                 _buildTeamSection(
                   title: 'Decision Maker (D)',
                   icon: Icons.gavel,
-                  description: 'Person with the authority to make final decisions',
-                  selectedMembers: _decisionMaker != null ? [_decisionMaker!] : [],
+                  description:
+                      'Person with the authority to make final decisions',
+                  selectedMembers:
+                      _decisionMaker != null ? [_decisionMaker!] : [],
                   onTap: () {
                     _showPersonnelSelectionDialog(
                       title: 'Select Decision Maker',
-                      selectedPersonnel: _decisionMaker != null ? [_decisionMaker!] : [],
+                      selectedPersonnel:
+                          _decisionMaker != null ? [_decisionMaker!] : [],
                       onSave: (selected) {
                         setState(() {
-                          _decisionMaker = selected.isNotEmpty ? selected.first : null;
+                          _decisionMaker =
+                              selected.isNotEmpty ? selected.first : null;
                         });
                       },
                       singleSelect: true,
@@ -722,7 +783,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTeamSection(
                   title: 'Accountable (A)',
                   icon: Icons.account_circle,
@@ -731,10 +792,12 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   onTap: () {
                     _showPersonnelSelectionDialog(
                       title: 'Select Accountable Person',
-                      selectedPersonnel: _accountable != null ? [_accountable!] : [],
+                      selectedPersonnel:
+                          _accountable != null ? [_accountable!] : [],
                       onSave: (selected) {
                         setState(() {
-                          _accountable = selected.isNotEmpty ? selected.first : null;
+                          _accountable =
+                              selected.isNotEmpty ? selected.first : null;
                         });
                       },
                       singleSelect: true,
@@ -742,7 +805,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTeamSection(
                   title: 'Responsible (R)',
                   icon: Icons.assignment_ind,
@@ -761,7 +824,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTeamSection(
                   title: 'Consulted (C)',
                   icon: Icons.chat_bubble_outline,
@@ -780,7 +843,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 _buildTeamSection(
                   title: 'Informed (I)',
                   icon: Icons.notification_important_outlined,
@@ -801,13 +864,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
-  
+
   Widget _buildProjectDetailsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -829,9 +892,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // User Stories Card
           _buildCardContainer(
             child: Column(
@@ -841,15 +904,16 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 _buildTextField(
                   controller: _userStoriesController,
                   label: 'User Stories',
-                  hint: 'Describe user stories in the format: As a [role], I want [feature] so that [benefit]',
+                  hint:
+                      'Describe user stories in the format: As a [role], I want [feature] so that [benefit]',
                   maxLines: 10,
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // UI/UX Links Card
           _buildCardContainer(
             child: Column(
@@ -859,7 +923,8 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 _buildTextField(
                   controller: _uiuxLinksController,
                   label: 'UI/UX Design Links',
-                  hint: 'Add links to Figma, Sketch or other design files (one per line)',
+                  hint:
+                      'Add links to Figma, Sketch or other design files (one per line)',
                   maxLines: 4,
                   suffixIcon: Icons.open_in_new,
                   onSuffixTap: () => _openLinks(_uiuxLinksController.text),
@@ -867,9 +932,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // References Card
           _buildCardContainer(
             child: Column(
@@ -879,7 +944,8 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 _buildTextField(
                   controller: _referencesController,
                   label: 'References',
-                  hint: 'Add links to relevant documents, research or resources (one per line)',
+                  hint:
+                      'Add links to relevant documents, research or resources (one per line)',
                   maxLines: 4,
                   suffixIcon: Icons.open_in_new,
                   onSuffixTap: () => _openLinks(_referencesController.text),
@@ -887,9 +953,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Constraints Card
           _buildCardContainer(
             child: Column(
@@ -905,9 +971,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Additional Notes Card
           _buildCardContainer(
             child: Column(
@@ -923,13 +989,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
-  
+
   Widget _buildCardContainer({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -942,11 +1008,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       child: child,
     );
   }
-  
+
   Widget _buildSectionHeader(String title, {IconData? icon}) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
@@ -968,15 +1034,12 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
             ],
           ),
           const SizedBox(height: 6),
-          Divider(
-            color: Colors.grey.shade200,
-            thickness: 1,
-          ),
+          Divider(color: Colors.grey.shade200, thickness: 1),
         ],
       ),
     );
   }
-  
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -990,7 +1053,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
   }) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1017,12 +1080,17 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: primaryColor, size: 20) : null,
-              suffixIcon: suffixIcon != null ? 
-                IconButton(
-                  icon: Icon(suffixIcon, color: primaryColor, size: 20),
-                  onPressed: onSuffixTap,
-                ) : null,
+              prefixIcon:
+                  prefixIcon != null
+                      ? Icon(prefixIcon, color: primaryColor, size: 20)
+                      : null,
+              suffixIcon:
+                  suffixIcon != null
+                      ? IconButton(
+                        icon: Icon(suffixIcon, color: primaryColor, size: 20),
+                        onPressed: onSuffixTap,
+                      )
+                      : null,
             ),
             maxLines: maxLines,
             validator: validator,
@@ -1033,7 +1101,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       ],
     );
   }
-  
+
   Widget _buildDateField({
     required String label,
     required DateTime date,
@@ -1042,7 +1110,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     final formattedDate = DateFormat('MM/dd/yyyy').format(date);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1069,10 +1137,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               children: [
                 Icon(Icons.calendar_today, size: 20, color: primaryColor),
                 const SizedBox(width: 12),
-                Text(
-                  formattedDate,
-                  style: TextStyle(fontSize: 15),
-                ),
+                Text(formattedDate, style: TextStyle(fontSize: 15)),
               ],
             ),
           ),
@@ -1080,7 +1145,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       ],
     );
   }
-  
+
   Widget _buildTeamSection({
     required String title,
     required IconData icon,
@@ -1091,7 +1156,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final textTheme = theme.textTheme;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -1126,11 +1191,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                     color: primaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: primaryColor,
-                  ),
+                  child: Icon(Icons.edit, size: 16, color: primaryColor),
                 ),
               ],
             ),
@@ -1145,7 +1206,10 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
             if (selectedMembers.isEmpty) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(16),
@@ -1153,7 +1217,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.person_add, size: 16, color: Colors.grey.shade600),
+                    Icon(
+                      Icons.person_add,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Tap to select members',
@@ -1170,35 +1238,33 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: selectedMembers.map((member) {
-                  return Chip(
-                    avatar: CircleAvatar(
-                      backgroundColor: primaryColor,
-                      radius: 12,
-                      child: Text(
-                        member[0],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                children:
+                    selectedMembers.map((member) {
+                      return Chip(
+                        avatar: CircleAvatar(
+                          backgroundColor: primaryColor,
+                          radius: 12,
+                          child: Text(
+                            member[0],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    label: Text(
-                      member,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: primaryColor,
-                      ),
-                    ),
-                    backgroundColor: primaryColor.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                  );
-                }).toList(),
+                        label: Text(
+                          member,
+                          style: TextStyle(fontSize: 13, color: primaryColor),
+                        ),
+                        backgroundColor: primaryColor.withOpacity(0.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      );
+                    }).toList(),
               ),
             ],
           ],
@@ -1206,90 +1272,95 @@ class _PrdEditScreenState extends State<PrdEditScreen> with SingleTickerProvider
       ),
     );
   }
-  
+
   // Helper method to open links
   Future<void> _openLinks(String linksText) async {
-    final links = linksText.split('\n')
-        .where((link) => link.trim().isNotEmpty)
-        .map((link) => link.trim())
-        .toList();
-    
+    final links =
+        linksText
+            .split('\n')
+            .where((link) => link.trim().isNotEmpty)
+            .map((link) => link.trim())
+            .toList();
+
     if (links.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No links found'))
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No links found')));
       }
       return;
     }
-    
+
     // If just one link, open it directly
     if (links.length == 1) {
       await _launchUrl(links.first);
       return;
     }
-    
+
     // If multiple links, show a dialog to choose
     if (mounted) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Open Link'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: links.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(
-                    links[index],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _launchUrl(links[index]);
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Open Link'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: links.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(
+                        links[index],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _launchUrl(links[index]);
+                      },
+                      trailing: IconButton(
+                        icon: const Icon(Icons.content_copy, size: 16),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: links[index]));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Link copied to clipboard'),
+                            ),
+                          );
+                        },
+                      ),
+                    );
                   },
-                  trailing: IconButton(
-                    icon: const Icon(Icons.content_copy, size: 16),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: links[index]));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Link copied to clipboard'))
-                      );
-                    },
-                  ),
-                );
-              },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
       );
     }
   }
-  
+
   Future<void> _launchUrl(String urlString) async {
     try {
       final url = Uri.parse(urlString);
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not launch URL'))
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Could not launch URL')));
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid URL: $e'))
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Invalid URL: $e')));
       }
     }
   }
