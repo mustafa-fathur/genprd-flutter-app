@@ -31,6 +31,25 @@ class PrdController extends ChangeNotifier {
   List<dynamic> get recentPrds => _recentPrds;
   String? get errorMessage => _errorMessage;
 
+  // Create new PRD
+  Future<Map<String, dynamic>> createNewPrd(
+    Map<String, dynamic> prdData,
+  ) async {
+    try {
+      // Call the API to create a new PRD
+      final response = await _prdService.createPrd(prdData);
+
+      // Refresh the PRD lists
+      await loadRecentPrds();
+      await loadPinnedPrds();
+
+      return response;
+    } catch (e) {
+      debugPrint('Error creating PRD: $e');
+      rethrow;
+    }
+  }
+
   // Load all PRDs
   Future<void> loadAllPrds() async {
     _status = PrdStatus.loading;

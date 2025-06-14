@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
-import 'package:genprd/features/prd/views/prd_detail_screen.dart';
-import 'package:genprd/features/prd/views/prd_form_screen.dart';
-import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
-import 'package:genprd/shared/widgets/screen_title_widget.dart';
 import 'package:genprd/shared/views/main_layout.dart';
 import 'package:intl/intl.dart';
 
@@ -421,7 +417,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
                           ),
                         ),
                         // Actions menu
-                        _buildActionsMenu(prd),
+                        _buildPrdItemMenu(prd),
                       ],
                     ),
                   ],
@@ -434,7 +430,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
     );
   }
 
-  Widget _buildActionsMenu(Map<String, dynamic> prd) {
+  Widget _buildPrdItemMenu(Map<String, dynamic> prd) {
     final bool isPinned = prd['is_pinned'] == true;
     final bool isArchived = prd['document_stage'] == 'archived';
 
@@ -444,91 +440,127 @@ class _PrdListScreenState extends State<PrdListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       itemBuilder:
           (context) => [
+            // View option
             PopupMenuItem<String>(
               value: 'view',
-              child: _buildPopupMenuItem(
-                CupertinoIcons.doc_text,
-                'View Details',
-              ),
+              child: _buildMenuItemRow(CupertinoIcons.doc_text, 'View Details'),
             ),
+            // Pin/Unpin option
             PopupMenuItem<String>(
               value: 'pin',
-              child: _buildPopupMenuItem(
-                isPinned ? CupertinoIcons.pin_slash : CupertinoIcons.pin,
+              child: _buildMenuItemRow(
+                isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
                 isPinned ? 'Unpin' : 'Pin',
               ),
             ),
+            // Archive/Unarchive option
             PopupMenuItem<String>(
               value: 'archive',
-              child: _buildPopupMenuItem(
+              child: _buildMenuItemRow(
                 isArchived
                     ? CupertinoIcons.tray_arrow_up
                     : CupertinoIcons.archivebox,
                 isArchived ? 'Unarchive' : 'Archive',
               ),
             ),
-            const PopupMenuDivider(),
+            // Delete option
             PopupMenuItem<String>(
               value: 'delete',
-              child: _buildPopupMenuItem(
+              child: _buildMenuItemRow(
                 CupertinoIcons.trash,
                 'Delete',
                 isDestructive: true,
               ),
             ),
           ],
-      onSelected: (value) => _handleMenuAction(value, prd),
+      onSelected: (value) {
+        switch (value) {
+          case 'view':
+            _navigateToPrdDetail(prd['id']);
+            break;
+          case 'pin':
+            _togglePinStatus(prd);
+            break;
+          case 'archive':
+            _showArchiveConfirmationDialog(prd);
+            break;
+          case 'delete':
+            _showDeleteConfirmationDialog(prd);
+            break;
+        }
+      },
     );
   }
 
-  Widget _buildPopupMenuItem(
+  Widget _buildMenuItemRow(
     IconData icon,
     String label, {
     bool isDestructive = false,
   }) {
+    final color = isDestructive ? Colors.red : null;
     return Row(
       children: [
-        Icon(icon, size: 18, color: isDestructive ? Colors.red : null),
+        Icon(icon, size: 18, color: color),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: isDestructive ? Colors.red : null)),
+        Text(label, style: TextStyle(color: color)),
       ],
     );
   }
 
-  void _handleMenuAction(String action, Map<String, dynamic> prd) async {
+  void _navigateToPrdDetail(String id) {
+    AppRouter.navigateToPrdDetail(context, id);
+  }
+
+  void _togglePinStatus(Map<String, dynamic> prd) {
     final prdController = Provider.of<PrdController>(context, listen: false);
     final String id = prd['id'].toString();
 
-    switch (action) {
-      case 'view':
-        AppRouter.navigateToPrdDetail(context, id);
-        break;
-      case 'pin':
-        try {
-          final bool isPinned = await prdController.togglePinPrd(id);
-          _showSnackBar(
-            isPinned ? 'PRD pinned successfully' : 'PRD unpinned successfully',
-          );
-        } catch (e) {
-          _showSnackBar('Failed to update pin status: $e', isError: true);
-        }
-        break;
-      case 'archive':
-        try {
-          final bool isArchived = prd['document_stage'] == 'archived';
-          final result = await prdController.archivePrd(id);
-          _showSnackBar(
-            isArchived
-                ? 'PRD unarchived successfully'
-                : 'PRD archived successfully',
-          );
-        } catch (e) {
-          _showSnackBar('Failed to archive PRD: $e', isError: true);
-        }
-        break;
-      case 'delete':
-        _showDeleteConfirmationDialog(prd);
-        break;
+    try {
+      final bool isPinned = prd['is_pinned'] == true;
+      final result = prdController.togglePinPrd(id);
+      _showSnackBar(
+        isPinned ? 'PRD pinned successfully' : 'PRD unpinned successfully',
+      );
+    } catch (e) {
+      _showSnackBar('Failed to update pin status: $e', isError: true);
+    }
+  }
+
+  void _showArchiveConfirmationDialog(Map<String, dynamic> prd) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Archive PRD'),
+            content: Text(
+              'Are you sure you want to archive "${prd['product_name']}"? '
+              'This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _archivePrd(prd['id'].toString());
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Archive'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _archivePrd(String id) async {
+    final prdController = Provider.of<PrdController>(context, listen: false);
+    try {
+      final result = await prdController.archivePrd(id);
+      _showSnackBar('PRD archived successfully');
+    } catch (e) {
+      _showSnackBar('Failed to archive PRD: $e', isError: true);
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:genprd/shared/config/api_config.dart';
 import 'package:genprd/shared/services/api_interceptor.dart';
 import 'package:genprd/features/auth/services/auth_service.dart';
+import 'package:genprd/features/prd/models/prd_model.dart';
 
 class PrdService {
   final ApiInterceptor _apiInterceptor;
@@ -33,6 +34,37 @@ class PrdService {
     }
   }
 
+  // Create a new PRD
+  Future<Map<String, dynamic>> createPrd(Map<String, dynamic> prdData) async {
+    try {
+      debugPrint('Creating new PRD with data: ${jsonEncode(prdData)}');
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/prd'),
+          headers: {
+            ...await ApiConfig.getHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(prdData),
+        );
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        debugPrint('PRD created successfully: ${response.statusCode}');
+        return responseData['data'] ?? {};
+      } else {
+        debugPrint(
+          'Failed to create PRD: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Failed to create PRD: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error creating PRD: $e');
+      rethrow;
+    }
+  }
+
   // Fetch pinned PRDs
   Future<List<dynamic>> getPinnedPrds() async {
     try {
@@ -49,10 +81,12 @@ class PrdService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final allPrds = responseData['data']['prds'] ?? [];
+
         // Filter pinned PRDs
         final pinnedPrds =
-            (allPrds as List).where((prd) => prd['is_pinned'] == true).toList();
+            allPrds.where((prd) => prd['is_pinned'] == true).toList();
         debugPrint('Found ${pinnedPrds.length} pinned PRDs');
+
         return pinnedPrds;
       } else {
         throw Exception('Failed to load pinned PRDs: ${response.reasonPhrase}');
@@ -64,39 +98,18 @@ class PrdService {
   }
 
   // Fetch recent PRDs
-  Future<List<dynamic>> getRecentPrds({int limit = 5}) async {
+  Future<List<dynamic>> getRecentPrds() async {
     try {
-      debugPrint('Fetching recent PRDs...');
       final response = await _apiInterceptor.interceptRequest(() async {
         return await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/prd?all=true'),
+          Uri.parse('${ApiConfig.baseUrl}/prd/recent'),
           headers: await ApiConfig.getHeaders(),
         );
       });
 
-      debugPrint('Recent PRDs response status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final allPrds = responseData['data']['prds'] ?? [];
-
-        // Filter out pinned PRDs and sort by updated_at
-        final unpinnedPrds =
-            (allPrds as List).where((prd) => prd['is_pinned'] != true).toList();
-        unpinnedPrds.sort((a, b) {
-          final DateTime aDate = DateTime.parse(
-            a['updated_at'] ?? DateTime.now().toIso8601String(),
-          );
-          final DateTime bDate = DateTime.parse(
-            b['updated_at'] ?? DateTime.now().toIso8601String(),
-          );
-          return bDate.compareTo(aDate); // Sort by most recent first
-        });
-
-        // Take only the requested number of items
-        final recentPrds = unpinnedPrds.take(limit).toList();
-        debugPrint('Found ${recentPrds.length} recent PRDs');
-        return recentPrds;
+        return responseData['data'] ?? [];
       } else {
         throw Exception('Failed to load recent PRDs: ${response.reasonPhrase}');
       }
@@ -107,7 +120,7 @@ class PrdService {
   }
 
   // Get PRD by ID
-  Future<Map<String, dynamic>> getPrdById(String id) async {
+  Future<PrdModel> getPrdById(String id) async {
     try {
       final response = await _apiInterceptor.interceptRequest(() async {
         return await http.get(
@@ -118,7 +131,8 @@ class PrdService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        return responseData['data'] ?? {};
+        final prdData = responseData['data'] ?? {};
+        return PrdModel.fromJson(prdData);
       } else {
         throw Exception('Failed to load PRD details: ${response.reasonPhrase}');
       }
@@ -198,18 +212,26 @@ class PrdService {
   // Update PRD stage
   Future<Map<String, dynamic>> updatePrdStage(String id, String stage) async {
     try {
+      debugPrint('Updating PRD stage to: $stage for ID: $id');
       final response = await _apiInterceptor.interceptRequest(() async {
         return await http.patch(
           Uri.parse('${ApiConfig.baseUrl}/prd/$id/stage'),
-          headers: await ApiConfig.getHeaders(),
+          headers: {
+            ...await ApiConfig.getHeaders(),
+            'Content-Type': 'application/json',
+          },
           body: jsonEncode({'stage': stage}),
         );
       });
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        debugPrint('Stage update response: ${response.body}');
         return responseData['data'] ?? {};
       } else {
+        debugPrint(
+          'Failed to update stage: ${response.statusCode} - ${response.body}',
+        );
         throw Exception('Failed to update PRD stage: ${response.reasonPhrase}');
       }
     } catch (e) {

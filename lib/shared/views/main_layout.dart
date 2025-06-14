@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
-import 'package:genprd/features/prd/views/prd_form_screen.dart';
-import 'package:genprd/features/prd/views/prd_list_screen.dart';
-import 'package:genprd/features/user/views/user_profile_screen.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/responsive/responsive_layout.dart';
 import 'package:provider/provider.dart';
@@ -269,7 +265,7 @@ class _MainLayoutState extends State<MainLayout> {
                                 ),
                           ),
                         )
-                        .toList(),
+                        ,
                   ],
                 );
               },
@@ -322,7 +318,7 @@ class _MainLayoutState extends State<MainLayout> {
                                 ),
                           ),
                         )
-                        .toList(),
+                        ,
                   ],
                 );
               },

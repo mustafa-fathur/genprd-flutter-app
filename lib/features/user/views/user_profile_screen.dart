@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:genprd/features/auth/views/login_screen.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
-import 'package:genprd/shared/utils/logout_helper.dart';
 import 'package:genprd/shared/services/token_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart';

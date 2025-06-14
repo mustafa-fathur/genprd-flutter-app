@@ -15,7 +15,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
+  
   final List<Map<String, dynamic>> _onboardingData = [
     {
       'title': 'Create Professional PRDs',
@@ -69,13 +69,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Text(
                     'Skip',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                 ),
               ),
             ),
-
+            
             // Page view
             Expanded(
               child: PageView.builder(
@@ -95,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-
+            
             // Page indicator
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -109,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     shape: BoxShape.circle,
                     color:
                         _currentPage == index
-                            ? Theme.of(context).colorScheme.primary
+                        ? Theme.of(context).colorScheme.primary
                             : Theme.of(
                               context,
                             ).colorScheme.surfaceContainerHighest,
@@ -117,15 +117,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
-
+            
             // Next or Get Started button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: PrimaryButton(
                 text:
                     _currentPage == _onboardingData.length - 1
-                        ? 'Get Started'
-                        : 'Next',
+                    ? 'Get Started'
+                    : 'Next',
                 onPressed: () {
                   if (_currentPage == _onboardingData.length - 1) {
                     _navigateToLogin();
@@ -146,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildOnboardingPage(String title, String description, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48.0),
+      padding: const EdgeInsets.symmetric(horizontal: 48.0), 
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

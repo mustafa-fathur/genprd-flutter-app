@@ -7,8 +7,6 @@ import 'package:genprd/features/prd/controllers/prd_controller.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/services/deep_link_handler.dart';
-import 'package:genprd/shared/services/token_storage.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() async {

@@ -4,7 +4,6 @@ import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {

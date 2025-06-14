@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:genprd/features/prd/controllers/prd_controller.dart';
+import 'package:genprd/features/prd/views/widgets/project_information_step.dart';
+import 'package:genprd/features/prd/views/widgets/project_overview_step.dart';
+import 'package:genprd/features/prd/views/widgets/darci_roles_step.dart';
+import 'package:genprd/features/prd/views/widgets/timeline_step.dart';
+import 'package:genprd/features/prd/views/widgets/personnel_selection_dialog.dart';
+import 'package:genprd/features/prd/views/widgets/generating_prd_screen.dart';
+import 'package:genprd/features/prd/views/widgets/step_indicator.dart';
+import 'package:genprd/features/prd/views/widgets/form_navigation_buttons.dart';
 
 class PrdFormScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
-  
+
   const PrdFormScreen({super.key, this.initialData});
 
   @override
@@ -13,83 +24,115 @@ class PrdFormScreen extends StatefulWidget {
 class _PrdFormScreenState extends State<PrdFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _productNameController = TextEditingController();
-  final TextEditingController _documentVersionController = TextEditingController();
-  final TextEditingController _documentOwnerController = TextEditingController();
-  final TextEditingController _projectOverviewController = TextEditingController();
-  
+  final TextEditingController _documentVersionController =
+      TextEditingController();
+  final TextEditingController _projectOverviewController =
+      TextEditingController();
+
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _isLoading = false;
-  
-  // Mock personnel data for dropdown selections
-  final List<Map<String, dynamic>> _personnel = [
-    {'name': 'Fulan', 'role': 'AI Engineer'},
-    {'name': 'Fulana', 'role': 'Software Engineer'},
-    {'name': 'Mustafa Fathur Rahman', 'role': 'Developer'},
-    {'name': 'John Doe', 'role': 'Product Manager'},
-    {'name': 'Jane Smith', 'role': 'Designer'},
-  ];
-  
-  // Selected personnel for different roles
-  List<String> _selectedStakeholders = [];
-  List<String> _selectedDevelopers = [];
-  
+  bool _isGenerating = false;
+  int _currentStep = 0;
+  double _progressValue = 0.25; // 25% for first step
+  String _stepTitle = "Project Information";
+
+  // Form data
+  List<String> _documentOwners = [];
+  List<String> _developers = [];
+  List<String> _stakeholders = [];
+
   // DARCI roles
-  String? _decisionMaker; // D
-  String? _accountable; // A
-  List<String> _responsible = []; // R
-  List<String> _consulted = []; // C
-  List<String> _informed = []; // I
-  
+  List<String> _deciderRoles = [];
+  List<String> _accountableRoles = [];
+  List<String> _responsibleRoles = [];
+  List<String> _consultedRoles = [];
+  List<String> _informedRoles = [];
+
   @override
   void initState() {
     super.initState();
-    
-    // Set default values for new PRD
-    _documentVersionController.text = '0.1.0';
-    
+
     // If editing an existing PRD, populate the form
     if (widget.initialData != null) {
-      _productNameController.text = widget.initialData!['productName'] ?? '';
-      _documentVersionController.text = widget.initialData!['documentVersion'] ?? '0.1.0';
-      _documentOwnerController.text = widget.initialData!['documentOwner'] ?? '';
-      _projectOverviewController.text = widget.initialData!['projectOverview'] ?? '';
-      
-      if (widget.initialData!['startDate'] != null) {
-        _startDate = DateTime.parse(widget.initialData!['startDate']);
-      }
-      
-      if (widget.initialData!['endDate'] != null) {
-        _endDate = DateTime.parse(widget.initialData!['endDate']);
-      }
-      
-      // Load personnel selections if available
-      _selectedStakeholders = List<String>.from(widget.initialData!['stakeholders'] ?? []);
-      _selectedDevelopers = List<String>.from(widget.initialData!['developers'] ?? []);
-      
-      // Load DARCI roles if available
-      _decisionMaker = widget.initialData!['darci']?['decisionMaker'];
-      _accountable = widget.initialData!['darci']?['accountable'];
-      _responsible = List<String>.from(widget.initialData!['darci']?['responsible'] ?? []);
-      _consulted = List<String>.from(widget.initialData!['darci']?['consulted'] ?? []);
-      _informed = List<String>.from(widget.initialData!['darci']?['informed'] ?? []);
+      _populateFormWithInitialData();
+    } else {
+      // Set default document version
+      _documentVersionController.text = '1.0';
     }
   }
-  
+
+  void _populateFormWithInitialData() {
+    _productNameController.text = widget.initialData!['product_name'] ?? '';
+    _documentVersionController.text =
+        widget.initialData!['document_version'] ?? '1.0';
+    _projectOverviewController.text =
+        widget.initialData!['project_overview'] ?? '';
+
+    if (widget.initialData!['start_date'] != null) {
+      _startDate = DateTime.parse(widget.initialData!['start_date']);
+    }
+
+    if (widget.initialData!['end_date'] != null) {
+      _endDate = DateTime.parse(widget.initialData!['end_date']);
+    }
+
+    // Load personnel selections if available
+    _documentOwners = List<String>.from(
+      widget.initialData!['document_owners'] ?? [],
+    );
+    _stakeholders = List<String>.from(
+      widget.initialData!['stakeholders'] ?? [],
+    );
+    _developers = List<String>.from(widget.initialData!['developers'] ?? []);
+
+    // Load DARCI roles if available
+    if (widget.initialData!['darci_roles'] != null) {
+      final darci = widget.initialData!['darci_roles'];
+      _deciderRoles = List<String>.from(darci['decider'] ?? []);
+      _accountableRoles = List<String>.from(darci['accountable'] ?? []);
+      _responsibleRoles = List<String>.from(darci['responsible'] ?? []);
+      _consultedRoles = List<String>.from(darci['consulted'] ?? []);
+      _informedRoles = List<String>.from(darci['informed'] ?? []);
+    }
+  }
+
   @override
   void dispose() {
     _productNameController.dispose();
     _documentVersionController.dispose();
-    _documentOwnerController.dispose();
     _projectOverviewController.dispose();
     super.dispose();
   }
 
+  // Update step title based on current step
+  void _updateStepTitle() {
+    switch (_currentStep) {
+      case 0:
+        _stepTitle = "Project Information";
+        break;
+      case 1:
+        _stepTitle = "Project Overview";
+        break;
+      case 2:
+        _stepTitle = "DARCI Roles";
+        break;
+      case 3:
+        _stepTitle = "Project Timeline";
+        break;
+      default:
+        _stepTitle = "Project Information";
+    }
+  }
+
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final initialDate = isStartDate 
-        ? _startDate ?? DateTime.now() 
-        : _endDate ?? (_startDate != null ? _startDate!.add(const Duration(days: 30)) : DateTime.now().add(const Duration(days: 30)));
-    
+    final initialDate =
+        isStartDate
+            ? _startDate ?? DateTime.now()
+            : _endDate ??
+                (_startDate != null
+                    ? _startDate!.add(const Duration(days: 30))
+                    : DateTime.now().add(const Duration(days: 30)));
+
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -109,7 +152,7 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         );
       },
     );
-    
+
     if (pickedDate != null) {
       setState(() {
         if (isStartDate) {
@@ -125,643 +168,334 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     }
   }
 
-  Future<void> _savePrd() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-      
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // TODO: Implement PRD creation/editing logic
-      // final prdData = Prd(
-      //   title: _titleController.text,
-      //   // ... other fields ...
-      // );
-      
-      setState(() {
-        _isLoading = false;
-      });
-      
-      if (mounted) {
-        Navigator.pop(context);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.initialData != null
-                  ? 'PRD updated successfully'
-                  : 'PRD created successfully',
-            ),
-            backgroundColor: Theme.of(context).primaryColor,
-          ),
-        );
+  // Validate the current step
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Project Information
+        if (_productNameController.text.isEmpty) {
+          _showValidationError('Please enter a product name');
+          return false;
+        }
+        if (_documentVersionController.text.isEmpty) {
+          _showValidationError('Please enter a document version');
+          return false;
+        }
+        if (_documentOwners.isEmpty) {
+          _showValidationError('Please select at least one document owner');
+          return false;
+        }
+        return true;
+
+      case 1: // Project Overview
+        if (_projectOverviewController.text.isEmpty) {
+          _showValidationError('Please enter a project overview');
+          return false;
+        }
+        if (_developers.isEmpty) {
+          _showValidationError('Please select at least one developer');
+          return false;
+        }
+        if (_stakeholders.isEmpty) {
+          _showValidationError('Please select at least one stakeholder');
+          return false;
+        }
+        return true;
+
+      case 2: // DARCI Roles
+        if (_deciderRoles.isEmpty) {
+          _showValidationError('Please select at least one decider');
+          return false;
+        }
+        if (_accountableRoles.isEmpty) {
+          _showValidationError('Please select at least one accountable person');
+          return false;
+        }
+        if (_responsibleRoles.isEmpty) {
+          _showValidationError('Please select at least one responsible person');
+          return false;
+        }
+        return true;
+
+      case 3: // Project Timeline
+        if (_startDate == null) {
+          _showValidationError('Please select a start date');
+          return false;
+        }
+        if (_endDate == null) {
+          _showValidationError('Please select an end date');
+          return false;
+        }
+        return true;
+
+      default:
+        return true;
+    }
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // Go to next step in the form
+  void _nextStep() {
+    if (_validateCurrentStep()) {
+      if (_currentStep < 3) {
+        setState(() {
+          _currentStep++;
+          _progressValue = (_currentStep + 1) * 0.25;
+          _updateStepTitle();
+        });
+      } else {
+        _savePrd();
       }
     }
   }
 
+  // Go to previous step in the form
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() {
+        _currentStep--;
+        _progressValue = (_currentStep + 1) * 0.25;
+        _updateStepTitle();
+      });
+    }
+  }
+
+  // Save PRD using AI
+  Future<void> _savePrd() async {
+    if (_validateCurrentStep()) {
+      setState(() {
+        _isGenerating = true;
+      });
+
+      try {
+        final prdController = Provider.of<PrdController>(
+          context,
+          listen: false,
+        );
+
+        // Prepare PRD data with DARCI roles
+        final Map<String, List<String>> darciRoles = {
+          'decider': _deciderRoles,
+          'accountable': _accountableRoles,
+          'responsible': _responsibleRoles,
+          'consulted': _consultedRoles,
+          'informed': _informedRoles,
+        };
+
+        // Prepare PRD data
+        final prdData = {
+          'product_name': _productNameController.text,
+          'document_version': _documentVersionController.text,
+          'project_overview': _projectOverviewController.text,
+          'start_date':
+              _startDate != null
+                  ? DateFormat('yyyy-MM-dd').format(_startDate!)
+                  : null,
+          'end_date':
+              _endDate != null
+                  ? DateFormat('yyyy-MM-dd').format(_endDate!)
+                  : null,
+          'document_owners': _documentOwners,
+          'developers': _developers,
+          'stakeholders': _stakeholders,
+          'darci_roles': darciRoles,
+          'generate_content': true,
+          'document_stage': 'draft',
+        };
+
+        // Create PRD
+        final result = await prdController.createNewPrd(prdData);
+
+        if (result.containsKey('id')) {
+          // Navigate to PRD detail screen using go_router
+          if (mounted) {
+            final String prdId = result['id'].toString();
+            GoRouter.of(context).pushReplacement('/prds/$prdId');
+          }
+        } else {
+          throw Exception('Failed to create PRD');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isGenerating = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // Original method with named parameters
   void _showPersonnelSelectionDialog({
-    required String title, 
+    required String title,
     required List<String> selectedPersonnel,
     required Function(List<String>) onSave,
     bool singleSelect = false,
   }) {
-    final tempSelection = List<String>.from(selectedPersonnel);
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    
     showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(
-                title, 
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)
-              ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _personnel.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: Colors.grey.shade200,
-                  ),
-                  itemBuilder: (context, index) {
-                    final person = _personnel[index];
-                    final isSelected = tempSelection.contains(person['name']);
-                    return CheckboxListTile(
-                      title: Text(
-                        person['name'],
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text(
-                        person['role'],
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                      ),
-                      value: isSelected,
-                      activeColor: primaryColor,
-                      checkColor: Colors.white,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          if (singleSelect) {
-                            tempSelection.clear();
-                            if (value == true) {
-                              tempSelection.add(person['name']);
-                            }
-                          } else {
-                            if (value == true) {
-                              tempSelection.add(person['name']);
-                            } else {
-                              tempSelection.remove(person['name']);
-                            }
-                          }
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.trailing,
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(foregroundColor: Colors.grey.shade700),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    onSave(tempSelection);
-                    Navigator.pop(context);
-                  },
-                  style: TextButton.styleFrom(foregroundColor: primaryColor),
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder:
+          (context) => PersonnelSelectionDialog(
+            title: title,
+            selectedPersonnel: selectedPersonnel,
+            onSave: onSave,
+            singleSelect: singleSelect,
+          ),
+    );
+  }
+
+  // Adapter method for DarciRolesStep
+  void _showPersonnelSelectionForDarci(
+    String title,
+    List<String> selectedPersonnel,
+    Function(List<String>) onSave,
+  ) {
+    _showPersonnelSelectionDialog(
+      title: title,
+      selectedPersonnel: selectedPersonnel,
+      onSave: onSave,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.initialData != null;
-    final theme = Theme.of(context);
-    
+    // Show loading screen when generating PRD
+    if (_isGenerating) {
+      return const GeneratingPrdScreen();
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit PRD' : 'Create New PRD'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (!_isLoading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: TextButton.icon(
-                onPressed: _savePrd,
-                icon: const Icon(Icons.save, color: Colors.white),
-                label: const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
+        title: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
-        ],
+            Text('Back to PRDs'),
+          ],
+        ),
+        automaticallyImplyLeading: false,
         elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  // Basic Information Section
-                  _buildSectionHeader('Basic Information'),
-                  _buildFormField(
-                    label: 'Product Name',
-                    controller: _productNameController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a product name';
-                      }
-                      return null;
-                    },
-                    icon: Icons.title,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _buildFormField(
-                          label: 'Document Version',
-                          controller: _documentVersionController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
-                          icon: Icons.tag,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildFormField(
-                          label: 'Document Owner',
-                          controller: _documentOwnerController,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
-                          icon: Icons.person,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Date Selection
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDateField(
-                          label: 'Start Date',
-                          value: _startDate != null 
-                              ? DateFormat('MM/dd/yyyy').format(_startDate!)
-                              : 'Select date',
-                          onTap: () => _selectDate(context, true),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildDateField(
-                          label: 'End Date',
-                          value: _endDate != null 
-                              ? DateFormat('MM/dd/yyyy').format(_endDate!)
-                              : 'Select date',
-                          onTap: () => _selectDate(context, false),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Project Overview
-                  _buildSectionHeader('Project Overview'),
-                  _buildFormField(
-                    label: 'Project Overview',
-                    controller: _projectOverviewController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a project overview';
-                      }
-                      return null;
-                    },
-                    icon: Icons.description,
-                    maxLines: 5,
-                    hint: 'Describe your project goals, scope, and objectives...',
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Team Members Section
-                  _buildSectionHeader('Team Members'),
-                  
-                  // Stakeholders
-                  _buildTeamSection(
-                    title: 'Stakeholders',
-                    icon: Icons.people_outline,
-                    selectedMembers: _selectedStakeholders,
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Stakeholders',
-                        selectedPersonnel: _selectedStakeholders,
-                        onSave: (selected) {
-                          setState(() {
-                            _selectedStakeholders = selected;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Developers
-                  _buildTeamSection(
-                    title: 'Developers',
-                    icon: Icons.code,
-                    selectedMembers: _selectedDevelopers,
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Developers',
-                        selectedPersonnel: _selectedDevelopers,
-                        onSave: (selected) {
-                          setState(() {
-                            _selectedDevelopers = selected;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // DARCI Matrix Section
-                  _buildSectionHeader('DARCI Matrix'),
-                  
-                  // Decision Maker (D)
-                  _buildTeamSection(
-                    title: 'Decision Maker (D)',
-                    icon: Icons.gavel,
-                    selectedMembers: _decisionMaker != null ? [_decisionMaker!] : [],
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Decision Maker',
-                        selectedPersonnel: _decisionMaker != null ? [_decisionMaker!] : [],
-                        onSave: (selected) {
-                          setState(() {
-                            _decisionMaker = selected.isNotEmpty ? selected.first : null;
-                          });
-                        },
-                        singleSelect: true,
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Accountable (A)
-                  _buildTeamSection(
-                    title: 'Accountable (A)',
-                    icon: Icons.account_circle,
-                    selectedMembers: _accountable != null ? [_accountable!] : [],
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Accountable Person',
-                        selectedPersonnel: _accountable != null ? [_accountable!] : [],
-                        onSave: (selected) {
-                          setState(() {
-                            _accountable = selected.isNotEmpty ? selected.first : null;
-                          });
-                        },
-                        singleSelect: true,
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Responsible (R)
-                  _buildTeamSection(
-                    title: 'Responsible (R)',
-                    icon: Icons.assignment_ind,
-                    selectedMembers: _responsible,
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Responsible Members',
-                        selectedPersonnel: _responsible,
-                        onSave: (selected) {
-                          setState(() {
-                            _responsible = selected;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Consulted (C)
-                  _buildTeamSection(
-                    title: 'Consulted (C)',
-                    icon: Icons.chat_bubble_outline,
-                    selectedMembers: _consulted,
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Consulted Members',
-                        selectedPersonnel: _consulted,
-                        onSave: (selected) {
-                          setState(() {
-                            _consulted = selected;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Informed (I)
-                  _buildTeamSection(
-                    title: 'Informed (I)',
-                    icon: Icons.notification_important_outlined,
-                    selectedMembers: _informed,
-                    onTap: () {
-                      _showPersonnelSelectionDialog(
-                        title: 'Select Informed Members',
-                        selectedPersonnel: _informed,
-                        onSave: (selected) {
-                          setState(() {
-                            _informed = selected;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  ElevatedButton(
-                    onPressed: _savePrd,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 1,
-                    ),
-                    child: Text(
-                      isEditing ? 'Update PRD' : 'Create PRD',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
-                ],
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Form header with title and progress indicator
+              StepIndicator(
+                currentStep: _currentStep,
+                totalSteps: 4,
+                stepTitle: _stepTitle,
+                progressValue: _progressValue,
               ),
-            ),
-    );
-  }
 
-  Widget _buildSectionHeader(String title) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Divider(
-          color: Colors.grey.shade200,
-          thickness: 1,
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
+              // Form content - scrollable
+              Expanded(child: _buildStepContent()),
 
-  Widget _buildFormField({
-    required String label,
-    required TextEditingController controller,
-    required String? Function(String?) validator,
-    IconData? icon,
-    int maxLines = 1,
-    String? hint,
-  }) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
-          prefixIcon: icon != null ? Icon(icon, color: primaryColor, size: 20) : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-        validator: validator,
-        maxLines: maxLines,
-        cursorColor: primaryColor,
-      ),
-    );
-  }
-
-  Widget _buildDateField({
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today,
-              color: primaryColor,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeamSection({
-    required String title,
-    required IconData icon,
-    required List<String> selectedMembers,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final textTheme = theme.textTheme;
-    
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, color: primaryColor),
-                    const SizedBox(width: 12),
-                    Text(
-                      title,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Icon(
-                  Icons.edit,
-                  size: 16,
-                  color: primaryColor,
-                ),
-              ],
-            ),
-            if (selectedMembers.isEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'No members selected. Tap to select.',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontStyle: FontStyle.italic,
-                  fontSize: 14,
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: selectedMembers.map((member) {
-                  return Chip(
-                    label: Text(
-                      member,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: primaryColor,
-                      ),
-                    ),
-                    backgroundColor: primaryColor.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    deleteIcon: Icon(Icons.close, size: 16, color: primaryColor),
-                    onDeleted: () {
-                      setState(() {
-                        selectedMembers.remove(member);
-                      });
-                    },
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                  );
-                }).toList(),
+              // Navigation buttons
+              FormNavigationButtons(
+                onNext: _nextStep,
+                onPrevious: _currentStep > 0 ? _previousStep : null,
+                isLastStep: _currentStep == 3,
+                isFirstStep: _currentStep == 0,
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  // Build the content for the current step
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return ProjectInformationStep(
+          productNameController: _productNameController,
+          documentVersionController: _documentVersionController,
+          documentOwners: _documentOwners,
+          developers: _developers,
+          stakeholders: _stakeholders,
+          updateDocumentOwners: (selected) {
+            setState(() => _documentOwners = selected);
+          },
+          updateDevelopers: (selected) {
+            setState(() => _developers = selected);
+          },
+          updateStakeholders: (selected) {
+            setState(() => _stakeholders = selected);
+          },
+          showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
+        );
+      case 1:
+        return ProjectOverviewStep(
+          projectOverviewController: _projectOverviewController,
+        );
+      case 2:
+        return DarciRolesStep(
+          deciderRoles: _deciderRoles,
+          accountableRoles: _accountableRoles,
+          responsibleRoles: _responsibleRoles,
+          consultedRoles: _consultedRoles,
+          informedRoles: _informedRoles,
+          updateDeciderRoles: (selected) {
+            setState(() => _deciderRoles = selected);
+          },
+          updateAccountableRoles: (selected) {
+            setState(() => _accountableRoles = selected);
+          },
+          updateResponsibleRoles: (selected) {
+            setState(() => _responsibleRoles = selected);
+          },
+          updateConsultedRoles: (selected) {
+            setState(() => _consultedRoles = selected);
+          },
+          updateInformedRoles: (selected) {
+            setState(() => _informedRoles = selected);
+          },
+          showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
+        );
+      case 3:
+        return TimelineStep(
+          startDate: _startDate,
+          endDate: _endDate,
+          selectDate: (isStartDate) => _selectDate(context, isStartDate),
+        );
+      default:
+        return ProjectInformationStep(
+          productNameController: _productNameController,
+          documentVersionController: _documentVersionController,
+          documentOwners: _documentOwners,
+          developers: _developers,
+          stakeholders: _stakeholders,
+          updateDocumentOwners: (selected) {
+            setState(() => _documentOwners = selected);
+          },
+          updateDevelopers: (selected) {
+            setState(() => _developers = selected);
+          },
+          updateStakeholders: (selected) {
+            setState(() => _stakeholders = selected);
+          },
+          showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
+        );
+    }
   }
 }

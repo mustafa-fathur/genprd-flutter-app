@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/features/dashboard/controllers/dashboard_provider.dart';
-import 'package:genprd/features/dashboard/models/dashboard_data.dart';
-import 'package:genprd/features/prd/views/prd_detail_screen.dart';
-import 'package:genprd/features/prd/views/prd_list_screen.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/views/main_layout.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
-import 'package:genprd/shared/widgets/screen_title_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';

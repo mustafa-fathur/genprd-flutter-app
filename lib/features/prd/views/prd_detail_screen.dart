@@ -6,7 +6,9 @@ import 'package:genprd/features/prd/services/prd_service.dart';
 import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
+import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:intl/intl.dart';
+import 'package:genprd/features/prd/models/prd_model.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String prdId;
@@ -23,6 +25,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
   final PrdService _prdService = PrdService();
 
   // State variables
+  PrdModel? _prdModel;
   Map<String, dynamic>? _prdData;
   bool _isLoading = true;
   String? _error;
@@ -44,7 +47,26 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
       final data = await _prdService.getPrdById(widget.prdId);
 
       setState(() {
-        _prdData = data;
+        _prdModel = data;
+        // Convert PrdModel to Map for backward compatibility
+        _prdData = {
+          'id': data.id,
+          'product_name': data.productName,
+          'document_version': data.documentVersion,
+          'document_stage': data.documentStage,
+          'project_overview': data.projectOverview,
+          'start_date': data.startDate,
+          'end_date': data.endDate,
+          'document_owners': data.documentOwners,
+          'developers': data.developers,
+          'stakeholders': data.stakeholders,
+          'darci_roles': data.darciRoles,
+          'generated_sections': data.generatedSections,
+          'timeline': data.timeline,
+          'is_pinned': data.isPinned,
+          'created_at': data.createdAt.toIso8601String(),
+          'updated_at': data.updatedAt.toIso8601String(),
+        };
         _isLoading = false;
       });
     } catch (e) {
@@ -71,7 +93,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
           title: const Text('PRD Details'),
           leading: IconButton(
             icon: const Icon(CupertinoIcons.back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => AppRouter.navigateToAllPrds(context),
           ),
         ),
         body: const Center(
@@ -87,7 +109,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
           title: const Text('PRD Details'),
           leading: IconButton(
             icon: const Icon(CupertinoIcons.back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => AppRouter.navigateToAllPrds(context),
           ),
         ),
         body: Center(
@@ -130,39 +152,10 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
         title: Text(_prdData!['product_name'] ?? 'PRD Details'),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.navigateToAllPrds(context),
         ),
         actions: [
-          // Pin/Unpin button
-          IconButton(
-            icon: Icon(
-              isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
-              color: isPinned ? Theme.of(context).primaryColor : null,
-            ),
-            tooltip: isPinned ? 'Unpin PRD' : 'Pin PRD',
-            onPressed: _togglePinStatus,
-          ),
-          // Edit button
-          IconButton(
-            icon: const Icon(CupertinoIcons.pencil),
-            tooltip: 'Edit PRD',
-            onPressed: () {
-              // Navigate to edit screen with full prdData
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PrdEditScreen(prdData: _prdData!),
-                ),
-              ).then((updatedData) {
-                if (updatedData != null) {
-                  setState(() {
-                    _prdData = updatedData;
-                  });
-                }
-              });
-            },
-          ),
-          // More options menu
+          // More options menu with all actions
           PopupMenuButton<String>(
             icon: const Icon(CupertinoIcons.ellipsis_vertical),
             tooltip: 'More options',
@@ -171,6 +164,20 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
             ),
             itemBuilder:
                 (context) => [
+                  // Pin/Unpin option
+                  PopupMenuItem<String>(
+                    value: 'pin',
+                    child: _buildPopupMenuItem(
+                      isPinned ? CupertinoIcons.pin_fill : CupertinoIcons.pin,
+                      isPinned ? 'Unpin' : 'Pin',
+                    ),
+                  ),
+                  // Edit option
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    child: _buildPopupMenuItem(CupertinoIcons.pencil, 'Edit'),
+                  ),
+                  // Download option
                   PopupMenuItem<String>(
                     value: 'download',
                     child: _buildPopupMenuItem(
@@ -178,6 +185,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
                       'Download PDF',
                     ),
                   ),
+                  // Archive option
                   PopupMenuItem<String>(
                     value: 'archive',
                     child: _buildPopupMenuItem(
@@ -187,7 +195,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
                       isArchived ? 'Unarchive' : 'Archive',
                     ),
                   ),
-                  const PopupMenuDivider(),
+                  // Delete option
                   PopupMenuItem<String>(
                     value: 'delete',
                     child: _buildPopupMenuItem(
@@ -242,7 +250,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Last Updated: ${_formatDate(_prdData!['updated_at'])}',
+                        'Last Updated: ${_formatDateTime(_prdData!['updated_at'])}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -368,11 +376,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
           ],
 
           // DARCI Roles section
-          if (_prdData!['darci_roles'] != null) ...[
-            const SizedBox(height: 20),
-            _buildSectionHeader('DARCI Roles'),
-            _buildDarciRolesSection(),
-          ],
+          _buildDarciRolesSection(),
         ],
       ),
     );
@@ -579,6 +583,28 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
   }
 
   Widget _buildDarciRolesSection() {
+    // First try to get DARCI roles from generated_sections
+    final darciRolesFromGenerated = _prdModel?.darciRolesList;
+
+    if (darciRolesFromGenerated != null && darciRolesFromGenerated.isNotEmpty) {
+      return Column(
+        children:
+            darciRolesFromGenerated.map((role) {
+              return Column(
+                children: [
+                  _buildDarciRoleCard(
+                    role['name'] ?? 'Unknown Role',
+                    (role['members'] as List?)?.join(', ') ?? 'None assigned',
+                    role['guidelines'] ?? 'No guidelines provided',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              );
+            }).toList(),
+      );
+    }
+
+    // Fallback to old structure if generated sections don't have DARCI
     final darciRoles = _prdData!['darci_roles'] as Map<String, dynamic>?;
 
     if (darciRoles == null || darciRoles.isEmpty) {
@@ -742,6 +768,24 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     final prdController = Provider.of<PrdController>(context, listen: false);
 
     switch (action) {
+      case 'pin':
+        await _togglePinStatus();
+        break;
+      case 'edit':
+        // Navigate to edit screen with full prdData
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PrdEditScreen(prdData: _prdData!),
+          ),
+        ).then((updatedData) {
+          if (updatedData != null) {
+            setState(() {
+              _prdData = updatedData;
+            });
+          }
+        });
+        break;
       case 'download':
         try {
           final result = await prdController.downloadPrd(id);
@@ -807,8 +851,8 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
       final result = await prdController.deletePrd(widget.prdId);
       if (result) {
         _showSnackBar('PRD deleted successfully');
-        // Navigate back to list screen
-        Navigator.pop(context);
+        // Navigate to PRD list screen using AppRouter
+        AppRouter.navigateToAllPrds(context);
       }
     } catch (e) {
       _showSnackBar('Failed to delete PRD: $e', isError: true);
@@ -924,6 +968,17 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     try {
       final DateTime date = DateTime.parse(dateString.toString());
       return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+
+  String _formatDateTime(dynamic dateString) {
+    if (dateString == null) return 'Unknown date';
+
+    try {
+      final DateTime date = DateTime.parse(dateString.toString());
+      return DateFormat('dd MMM yyyy HH:mm').format(date);
     } catch (e) {
       return 'Invalid date';
     }
