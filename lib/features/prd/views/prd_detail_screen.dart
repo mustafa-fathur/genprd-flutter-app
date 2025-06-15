@@ -7,8 +7,16 @@ import 'package:genprd/features/prd/views/prd_edit_screen.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
-import 'package:intl/intl.dart';
 import 'package:genprd/features/prd/models/prd_model.dart';
+import 'package:genprd/features/prd/views/widgets/prd_detail_header.dart';
+import 'package:genprd/features/prd/views/widgets/section_header.dart';
+import 'package:genprd/features/prd/views/widgets/content_card.dart';
+import 'package:genprd/features/prd/views/widgets/info_card.dart';
+import 'package:genprd/features/prd/views/widgets/darci_role_card.dart';
+import 'package:genprd/features/prd/views/widgets/timeline_item.dart';
+import 'package:genprd/features/prd/views/widgets/success_metric_item.dart';
+import 'package:genprd/features/prd/views/widgets/user_story_item.dart';
+import 'package:intl/intl.dart';
 
 class PrdDetailScreen extends StatefulWidget {
   final String prdId;
@@ -19,9 +27,7 @@ class PrdDetailScreen extends StatefulWidget {
   State<PrdDetailScreen> createState() => _PrdDetailScreenState();
 }
 
-class _PrdDetailScreenState extends State<PrdDetailScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _PrdDetailScreenState extends State<PrdDetailScreen> {
   final PrdService _prdService = PrdService();
 
   // State variables
@@ -30,10 +36,21 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
   bool _isLoading = true;
   String? _error;
 
+  // Section expansion states
+  final Map<String, bool> _expandedSections = {
+    'overview': true,
+    'problem': true,
+    'objectives': true,
+    'team': true,
+    'timeline': true,
+    'user_stories': true,
+    'success_metrics': true,
+    'darci': true,
+  };
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _fetchPrdData();
   }
 
@@ -76,12 +93,6 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
       });
       debugPrint('Error fetching PRD data: $e');
     }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -208,66 +219,138 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
             onSelected: _handleMenuAction,
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Theme.of(context).primaryColor,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Theme.of(context).primaryColor,
-          indicatorWeight: 3.0,
-          tabs: const [Tab(text: 'Overview'), Tab(text: 'Team & Roles')],
-        ),
         elevation: 0,
       ),
       body: Column(
         children: [
           // Status bar with stage selector
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Version ${_prdData!['document_version'] ?? '1.0'}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Last Updated: ${_formatDateTime(_prdData!['updated_at'])}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildStageDropdown(),
-              ],
-            ),
+          PrdDetailHeader(
+            version: _prdData!['document_version'] ?? '1.0',
+            updatedAt: _prdData!['updated_at'] ?? '',
+            currentStage: _prdData!['document_stage'] ?? 'draft',
+            onStageChanged: _updatePrdStage,
           ),
 
-          // Tab content
+          // Main content
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildOverviewTab(), _buildTeamRolesTab()],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // PRD Identity section
+                  _buildExpandableSection(
+                    'PRD Identity',
+                    'overview',
+                    _buildPrdIdentitySection(),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Project Overview section
+                  _buildExpandableSection(
+                    'Project Overview',
+                    'overview',
+                    ContentCard(
+                      content:
+                          _prdData!['project_overview'] ??
+                          'No overview available',
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Problem Statements section
+                  if (_hasGeneratedSectionContent(
+                    'overview',
+                    'Problem Statement',
+                  )) ...[
+                    _buildExpandableSection(
+                      'Problem Statements',
+                      'problem',
+                      ContentCard(
+                        content: _getOverviewSectionContent(
+                          'Problem Statement',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Objectives section
+                  if (_hasGeneratedSectionContent('overview', 'Objective')) ...[
+                    _buildExpandableSection(
+                      'Objectives',
+                      'objectives',
+                      ContentCard(
+                        content: _getOverviewSectionContent('Objective'),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Team Members section
+                  _buildExpandableSection(
+                    'Team Members',
+                    'team',
+                    InfoCard(
+                      children: [
+                        InfoRow(
+                          label: 'Document Owner:',
+                          value: _getListAsString(_prdData!['document_owners']),
+                        ),
+                        InfoRow(
+                          label: 'Stakeholders:',
+                          value: _getListAsString(_prdData!['stakeholders']),
+                        ),
+                        InfoRow(
+                          label: 'Developers:',
+                          value: _getListAsString(_prdData!['developers']),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Timeline section
+                  if (_hasTimeline()) ...[
+                    _buildExpandableSection(
+                      'Timeline',
+                      'timeline',
+                      _buildTimelineSection(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // User Stories section
+                  if (_hasUserStories()) ...[
+                    _buildExpandableSection(
+                      'User Stories',
+                      'user_stories',
+                      _buildUserStoriesSection(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Success Metrics section
+                  if (_hasSuccessMetrics()) ...[
+                    _buildExpandableSection(
+                      'Success Metrics',
+                      'success_metrics',
+                      _buildSuccessMetricsSection(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // DARCI Roles section
+                  _buildExpandableSection(
+                    'DARCI Roles',
+                    'darci',
+                    _buildDarciRolesSection(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -294,221 +377,127 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     );
   }
 
-  Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('PRD Identity'),
-          _buildInfoCard([
-            _buildInfoRow(
-              'Product Name:',
-              _prdData!['product_name'] ?? 'Untitled',
-            ),
-            _buildInfoRow(
-              'Document Version:',
-              _prdData!['document_version'] ?? '1.0',
-            ),
-            _buildInfoRow('Document Owner:', _getDocumentOwners()),
-            _buildInfoRow(
-              'Created Date:',
-              _formatDate(_prdData!['created_at']),
-            ),
-          ]),
-
-          const SizedBox(height: 20),
-          _buildSectionHeader('Project Overview'),
-          _buildContentCard(
-            _prdData!['project_overview'] ?? 'No overview available',
-          ),
-
-          // Problem Statements from generated sections if available
-          if (_hasGeneratedSection('overview')) ...[
-            const SizedBox(height: 20),
-            _buildSectionHeader('Problem Statements'),
-            _buildContentCard(_getOverviewSectionContent('Problem Statement')),
-          ],
-
-          // Objectives from generated sections if available
-          if (_hasGeneratedSection('overview')) ...[
-            const SizedBox(height: 20),
-            _buildSectionHeader('Objectives'),
-            _buildContentCard(_getOverviewSectionContent('Objectives')),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTeamRolesTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Team Members'),
-          _buildInfoCard([
-            _buildInfoRow('Document Owner:', _getDocumentOwners()),
-            _buildInfoRow(
-              'Stakeholders:',
-              _getListAsString(_prdData!['stakeholders']),
-            ),
-            _buildInfoRow(
-              'Developers:',
-              _getListAsString(_prdData!['developers']),
-            ),
-          ]),
-
-          // Timeline section
-          if (_prdData!['timeline'] != null &&
-              (_prdData!['timeline'] as List).isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _buildSectionHeader('Timeline'),
-            _buildTimelineSection(),
-          ],
-
-          // Success Metrics from generated sections if available
-          if (_hasGeneratedSection('success_metrics')) ...[
-            const SizedBox(height: 20),
-            _buildSectionHeader('Success Metrics'),
-            _buildSuccessMetricsSection(),
-          ],
-
-          // DARCI Roles section
-          _buildDarciRolesSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.primaryColor,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Divider(color: Colors.grey.shade200, thickness: 1),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard(List<Widget> children) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+  Widget _buildExpandableSection(
+    String title,
+    String sectionKey,
+    Widget content,
+  ) {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildContentCard(String content) {
-    final theme = Theme.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Text(
-        content,
-        style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.primaryColor,
+          // Header with expand/collapse button
+          InkWell(
+            onTap: () {
+              setState(() {
+                _expandedSections[sectionKey] =
+                    !(_expandedSections[sectionKey] ?? true);
+              });
+            },
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _expandedSections[sectionKey] ?? true
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                    size: 18,
+                    color: Colors.grey.shade600,
+                  ),
+                ],
               ),
             ),
           ),
-          Expanded(child: Text(value, style: textTheme.bodyMedium)),
+
+          // Content (expandable)
+          if (_expandedSections[sectionKey] ?? true)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+              child: content,
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPrdIdentitySection() {
+    return InfoCard(
+      children: [
+        InfoRow(
+          label: 'Product Name:',
+          value: _prdData!['product_name'] ?? 'Untitled',
+        ),
+        InfoRow(
+          label: 'Document Version:',
+          value: _prdData!['document_version'] ?? '1.0',
+        ),
+        InfoRow(
+          label: 'Created Date:',
+          value: _formatDate(_prdData!['created_at']),
+        ),
+        if (_prdData!['start_date'] != null)
+          InfoRow(
+            label: 'Start Date:',
+            value: _prdData!['start_date'] ?? 'Not specified',
+          ),
+        if (_prdData!['end_date'] != null)
+          InfoRow(
+            label: 'End Date:',
+            value: _prdData!['end_date'] ?? 'Not specified',
+          ),
+      ],
     );
   }
 
   Widget _buildTimelineSection() {
     final timeline = _prdData!['timeline'] as List;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            timeline.map<Widget>((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['time_period'] ?? 'No date specified',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['activity'] ?? 'No activity specified',
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                    if (item['pic'] != null &&
-                        item['pic'].toString().isNotEmpty)
-                      Text(
-                        'PIC: ${item['pic']}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            }).toList(),
-      ),
+    return Column(
+      children:
+          timeline.map((item) {
+            return TimelineItem(
+              timePeriod: item['time_period'] ?? 'No date specified',
+              activity: item['activity'] ?? 'No activity specified',
+              pic: item['pic'],
+            );
+          }).toList(),
+    );
+  }
+
+  Widget _buildUserStoriesSection() {
+    final userStories =
+        _prdData!['generated_sections']?['user_stories']?['stories'] as List?;
+
+    if (userStories == null || userStories.isEmpty) {
+      return const ContentCard(content: 'No user stories defined');
+    }
+
+    return Column(
+      children:
+          userStories.map((story) {
+            return UserStoryItem(
+              title: story['title'] ?? 'Unnamed Story',
+              userStory: story['user_story'] ?? 'No description',
+              acceptanceCriteria: story['acceptance_criteria'],
+              priority: story['priority'] ?? 'medium',
+            );
+          }).toList(),
     );
   }
 
@@ -518,234 +507,90 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
             as List?;
 
     if (metrics == null || metrics.isEmpty) {
-      return _buildContentCard('No success metrics defined');
+      return const ContentCard(content: 'No success metrics defined');
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            metrics.map<Widget>((metric) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      metric['name'] ?? 'Unnamed Metric',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (metric['definition'] != null)
-                      Text(
-                        metric['definition'],
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (metric['current'] != null)
-                          Text(
-                            'Current: ${metric['current']}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        const SizedBox(width: 16),
-                        if (metric['target'] != null)
-                          Text(
-                            'Target: ${metric['target']}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          metrics.map((metric) {
+            return SuccessMetricItem(
+              name: metric['name'] ?? 'Unnamed Metric',
+              definition: metric['definition'],
+              current: metric['current']?.toString(),
+              target: metric['target']?.toString(),
+            );
+          }).toList(),
     );
   }
 
   Widget _buildDarciRolesSection() {
     // First try to get DARCI roles from generated_sections
-    final darciRolesFromGenerated = _prdModel?.darciRolesList;
+    final darciRolesFromGenerated =
+        _prdData!['generated_sections']?['darci']?['roles'] as List?;
 
     if (darciRolesFromGenerated != null && darciRolesFromGenerated.isNotEmpty) {
       return Column(
         children:
             darciRolesFromGenerated.map((role) {
-              return Column(
-                children: [
-                  _buildDarciRoleCard(
-                    role['name'] ?? 'Unknown Role',
+              return DarciRoleCard(
+                role: role['name'] ?? 'Unknown Role',
+                people:
                     (role['members'] as List?)?.join(', ') ?? 'None assigned',
-                    role['guidelines'] ?? 'No guidelines provided',
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                guidelines: role['guidelines'] ?? 'No guidelines provided',
               );
             }).toList(),
       );
     }
 
-    // Fallback to old structure if generated sections don't have DARCI
+    // Fallback to old structure
     final darciRoles = _prdData!['darci_roles'] as Map<String, dynamic>?;
 
     if (darciRoles == null || darciRoles.isEmpty) {
-      return _buildContentCard('No DARCI roles defined');
+      return const ContentCard(content: 'No DARCI roles defined');
     }
 
     return Column(
       children: [
         if (darciRoles['decider'] != null)
-          _buildDarciRoleCard(
-            'Decider',
-            _getListAsString(darciRoles['decider']),
-            'Responsible for making final decisions on project direction and scope.',
+          DarciRoleCard(
+            role: 'Decider',
+            people: _getListAsString(darciRoles['decider']),
+            guidelines:
+                'Responsible for making final decisions on project direction and scope.',
           ),
-        const SizedBox(height: 12),
 
         if (darciRoles['accountable'] != null)
-          _buildDarciRoleCard(
-            'Accountable',
-            _getListAsString(darciRoles['accountable']),
-            'Accountable for the successful delivery of the project.',
+          DarciRoleCard(
+            role: 'Accountable',
+            people: _getListAsString(darciRoles['accountable']),
+            guidelines:
+                'Accountable for the successful delivery of the project.',
           ),
-        const SizedBox(height: 12),
 
         if (darciRoles['responsible'] != null)
-          _buildDarciRoleCard(
-            'Responsible',
-            _getListAsString(darciRoles['responsible']),
-            'Responsible for implementing the project requirements.',
+          DarciRoleCard(
+            role: 'Responsible',
+            people: _getListAsString(darciRoles['responsible']),
+            guidelines:
+                'Responsible for implementing the project requirements.',
           ),
-        const SizedBox(height: 12),
 
         if (darciRoles['consulted'] != null)
-          _buildDarciRoleCard(
-            'Consulted',
-            _getListAsString(darciRoles['consulted']),
-            'Consulted for expertise in specific areas of the project.',
+          DarciRoleCard(
+            role: 'Consulted',
+            people: _getListAsString(darciRoles['consulted']),
+            guidelines:
+                'Consulted for expertise in specific areas of the project.',
           ),
-        const SizedBox(height: 12),
 
         if (darciRoles['informed'] != null)
-          _buildDarciRoleCard(
-            'Informed',
-            _getListAsString(darciRoles['informed']),
-            'Kept informed about project progress and milestones.',
+          DarciRoleCard(
+            role: 'Informed',
+            people: _getListAsString(darciRoles['informed']),
+            guidelines: 'Kept informed about project progress and milestones.',
           ),
       ],
-    );
-  }
-
-  Widget _buildDarciRoleCard(String role, String people, String guidelines) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            role,
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(people, style: textTheme.bodyMedium),
-          const SizedBox(height: 4),
-          Text(
-            guidelines,
-            style: textTheme.bodySmall?.copyWith(
-              color: Colors.grey.shade600,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStageDropdown() {
-    final String stage = _prdData!['document_stage'] ?? 'draft';
-    final Color badgeColor = _getStageBadgeColor(stage);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: stage,
-          isDense: true,
-          borderRadius: BorderRadius.circular(8),
-          icon: Icon(CupertinoIcons.chevron_down, size: 14, color: badgeColor),
-          style: TextStyle(
-            color: badgeColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-          items: [
-            DropdownMenuItem(
-              value: 'draft',
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('Draft'),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'inprogress',
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('In Progress'),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'finished',
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('Finished'),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'archived',
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('Archived'),
-              ),
-            ),
-          ],
-          onChanged: _updatePrdStage,
-        ),
-      ),
     );
   }
 
@@ -881,11 +726,14 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     final prdController = Provider.of<PrdController>(context, listen: false);
     try {
       final result = await prdController.updatePrdStage(widget.prdId, newStage);
-      _showSnackBar('PRD stage updated to ${_getDisplayStage(newStage)}');
+
       // Update local state
       setState(() {
         _prdData!['document_stage'] = newStage;
       });
+
+      // Show success message
+      _showSnackBar('PRD stage updated to ${_getDisplayStage(newStage)}');
     } catch (e) {
       _showSnackBar('Failed to update PRD stage: $e', isError: true);
     }
@@ -902,47 +750,44 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     );
   }
 
-  String _getDisplayStage(String stage) {
-    switch (stage.toLowerCase()) {
-      case 'inprogress':
-        return 'In Progress';
-      case 'draft':
-        return 'Draft';
-      case 'finished':
-        return 'Finished';
-      case 'archived':
-        return 'Archived';
-      default:
-        return stage;
-    }
+  // Helper methods
+  bool _hasTimeline() {
+    return _prdData!['timeline'] != null &&
+        (_prdData!['timeline'] as List).isNotEmpty;
   }
 
-  // Helper methods for handling data
-  String _getDocumentOwners() {
-    if (_prdData!['document_owners'] == null) return 'Not specified';
-
-    if (_prdData!['document_owners'] is List) {
-      return (_prdData!['document_owners'] as List)
-          .map((item) => item.toString())
-          .join(', ');
-    }
-
-    return _prdData!['document_owners'].toString();
-  }
-
-  String _getListAsString(dynamic list) {
-    if (list == null) return 'Not specified';
-
-    if (list is List) {
-      return list.map((item) => item.toString()).join(', ');
-    }
-
-    return list.toString();
-  }
-
-  bool _hasGeneratedSection(String sectionName) {
+  bool _hasUserStories() {
     return _prdData!['generated_sections'] != null &&
-        _prdData!['generated_sections'][sectionName] != null;
+        _prdData!['generated_sections']['user_stories'] != null &&
+        _prdData!['generated_sections']['user_stories']['stories'] != null &&
+        (_prdData!['generated_sections']['user_stories']['stories'] as List)
+            .isNotEmpty;
+  }
+
+  bool _hasSuccessMetrics() {
+    return _prdData!['generated_sections'] != null &&
+        _prdData!['generated_sections']['success_metrics'] != null &&
+        _prdData!['generated_sections']['success_metrics']['metrics'] != null &&
+        (_prdData!['generated_sections']['success_metrics']['metrics'] as List)
+            .isNotEmpty;
+  }
+
+  bool _hasGeneratedSectionContent(String sectionName, String title) {
+    if (_prdData!['generated_sections'] == null ||
+        _prdData!['generated_sections'][sectionName] == null ||
+        _prdData!['generated_sections'][sectionName]['sections'] == null) {
+      return false;
+    }
+
+    final sections =
+        _prdData!['generated_sections'][sectionName]['sections'] as List;
+    return sections.any(
+      (section) =>
+          section['title'] != null &&
+          section['title'].toString().contains(title) &&
+          section['content'] != null &&
+          section['content'].toString().isNotEmpty,
+    );
   }
 
   String _getOverviewSectionContent(String title) {
@@ -962,6 +807,21 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     return 'No content available';
   }
 
+  bool _hasGeneratedSection(String sectionName) {
+    return _prdData!['generated_sections'] != null &&
+        _prdData!['generated_sections'][sectionName] != null;
+  }
+
+  String _getListAsString(dynamic list) {
+    if (list == null) return 'Not specified';
+
+    if (list is List) {
+      return list.map((item) => item.toString()).join(', ');
+    }
+
+    return list.toString();
+  }
+
   String _formatDate(dynamic dateString) {
     if (dateString == null) return 'Unknown date';
 
@@ -973,29 +833,18 @@ class _PrdDetailScreenState extends State<PrdDetailScreen>
     }
   }
 
-  String _formatDateTime(dynamic dateString) {
-    if (dateString == null) return 'Unknown date';
-
-    try {
-      final DateTime date = DateTime.parse(dateString.toString());
-      return DateFormat('dd MMM yyyy HH:mm').format(date);
-    } catch (e) {
-      return 'Invalid date';
-    }
-  }
-
-  Color _getStageBadgeColor(String? stage) {
-    switch (stage?.toLowerCase()) {
-      case 'draft':
-        return AppTheme.badgeColors['Draft'] ?? const Color(0xFFF59E0B);
+  String _getDisplayStage(String stage) {
+    switch (stage.toLowerCase()) {
       case 'inprogress':
-        return AppTheme.badgeColors['In Progress'] ?? const Color(0xFF2563EB);
+        return 'In Progress';
+      case 'draft':
+        return 'Draft';
       case 'finished':
-        return AppTheme.badgeColors['Finished'] ?? const Color(0xFF10B981);
+        return 'Finished';
       case 'archived':
-        return AppTheme.badgeColors['Archived'] ?? const Color(0xFF6B7280);
+        return 'Archived';
       default:
-        return Colors.grey;
+        return stage;
     }
   }
 }

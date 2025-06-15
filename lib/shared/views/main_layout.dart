@@ -150,13 +150,42 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          AppRouter.navigateToCreatePrd(context);
-        },
-        backgroundColor: primaryColor,
-        elevation: 2,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton:
+          widget.selectedItem != NavigationItem.dashboard
+              ? Container(
+                margin: const EdgeInsets.only(bottom: 24.0, right: 8.0),
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFF1F2937,
+                  ), // Dark color matching app theme
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () {
+                      AppRouter.navigateToCreatePrd(context);
+                    },
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: CustomFloatingActionButtonLocation(
+        FloatingActionButtonLocation.endFloat,
+        24.0,
       ),
     );
   }
@@ -264,8 +293,7 @@ class _MainLayoutState extends State<MainLayout> {
                                   prd['id'].toString(),
                                 ),
                           ),
-                        )
-                        ,
+                        ),
                   ],
                 );
               },
@@ -317,8 +345,7 @@ class _MainLayoutState extends State<MainLayout> {
                                   prd['id'].toString(),
                                 ),
                           ),
-                        )
-                        ,
+                        ),
                   ],
                 );
               },
@@ -466,5 +493,19 @@ class _MainLayoutState extends State<MainLayout> {
         AppRouter.navigateToRecentPrds(context);
         break;
     }
+  }
+}
+
+/// Custom FloatingActionButtonLocation that positions the FAB higher up from the bottom
+class CustomFloatingActionButtonLocation extends FloatingActionButtonLocation {
+  final FloatingActionButtonLocation _location;
+  final double _offsetY;
+
+  const CustomFloatingActionButtonLocation(this._location, this._offsetY);
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final Offset offset = _location.getOffset(scaffoldGeometry);
+    return Offset(offset.dx, offset.dy - _offsetY);
   }
 }

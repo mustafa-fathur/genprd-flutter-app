@@ -246,4 +246,24 @@ class PrdController extends ChangeNotifier {
       }
     }
   }
+
+  // Update PRD
+  Future<Map<String, dynamic>?> updatePrd(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      debugPrint('Updating PRD with ID: $id');
+      final response = await _prdService.updatePrd(id, data);
+      if (response.isNotEmpty) {
+        // Refresh the PRD list after update
+        await loadAllData();
+        return response;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error updating PRD: $e');
+      rethrow;
+    }
+  }
 }

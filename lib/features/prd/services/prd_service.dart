@@ -220,7 +220,7 @@ class PrdService {
             ...await ApiConfig.getHeaders(),
             'Content-Type': 'application/json',
           },
-          body: jsonEncode({'stage': stage}),
+          body: jsonEncode({'document_stage': stage}),
         );
       });
 
@@ -258,6 +258,40 @@ class PrdService {
       }
     } catch (e) {
       debugPrint('Error downloading PRD: $e');
+      rethrow;
+    }
+  }
+
+  // Update PRD
+  Future<Map<String, dynamic>> updatePrd(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      debugPrint('Updating PRD with ID: $id');
+      final response = await _apiInterceptor.interceptRequest(() async {
+        return await http.put(
+          Uri.parse('${ApiConfig.baseUrl}/prd/$id'),
+          headers: {
+            ...await ApiConfig.getHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(data),
+        );
+      });
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        debugPrint('PRD update response: ${response.body}');
+        return responseData['data'] ?? {};
+      } else {
+        debugPrint(
+          'Failed to update PRD: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Failed to update PRD: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      debugPrint('Error updating PRD: $e');
       rethrow;
     }
   }

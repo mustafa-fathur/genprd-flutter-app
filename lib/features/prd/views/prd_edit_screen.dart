@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:genprd/features/prd/controllers/prd_controller.dart';
 
 class PrdEditScreen extends StatefulWidget {
   final Map<String, dynamic> prdData;
@@ -75,73 +77,152 @@ class _PrdEditScreenState extends State<PrdEditScreen>
   void _initializeControllers() {
     // Basic Info
     _titleController = TextEditingController(
-      text: widget.prdData['title'] ?? '',
+      text: widget.prdData['product_name'] ?? '',
     );
     _versionController = TextEditingController(
-      text: widget.prdData['version'] ?? '0.1.0',
+      text: widget.prdData['document_version'] ?? '1.0',
     );
     _ownerController = TextEditingController(
-      text: widget.prdData['owner'] ?? '',
+      text:
+          widget.prdData['document_owners'] != null &&
+                  (widget.prdData['document_owners'] as List).isNotEmpty
+              ? (widget.prdData['document_owners'] as List).join(', ')
+              : '',
     );
     _createdDateController = TextEditingController(
-      text: DateFormat('MM/dd/yyyy').format(DateTime.now()),
+      text:
+          widget.prdData['created_at'] != null
+              ? DateFormat(
+                'MM/dd/yyyy',
+              ).format(DateTime.parse(widget.prdData['created_at'].toString()))
+              : DateFormat('MM/dd/yyyy').format(DateTime.now()),
     );
 
     // Dates
     _startDate =
-        widget.prdData['startDate'] != null
-            ? DateTime.parse(widget.prdData['startDate'])
+        widget.prdData['start_date'] != null
+            ? DateTime.parse(widget.prdData['start_date'].toString())
             : DateTime.now();
     _endDate =
-        widget.prdData['endDate'] != null
-            ? DateTime.parse(widget.prdData['endDate'])
+        widget.prdData['end_date'] != null
+            ? DateTime.parse(widget.prdData['end_date'].toString())
             : DateTime.now().add(const Duration(days: 30));
 
     // Project Overview
     _overviewController = TextEditingController(
-      text: widget.prdData['overview'] ?? '',
+      text: widget.prdData['project_overview'] ?? '',
     );
+
+    // Try to extract problem statements from generated sections
+    String problemStatements = '';
+    if (widget.prdData['generated_sections'] != null &&
+        widget.prdData['generated_sections']['overview'] != null &&
+        widget.prdData['generated_sections']['overview']['sections'] != null) {
+      final sections =
+          widget.prdData['generated_sections']['overview']['sections'] as List;
+      for (final section in sections) {
+        if (section['title'].toString().contains('Problem Statement')) {
+          problemStatements = section['content'] ?? '';
+          break;
+        }
+      }
+    }
     _problemStatementsController = TextEditingController(
-      text: widget.prdData['problemStatements'] ?? '',
+      text: problemStatements,
     );
-    _objectivesController = TextEditingController(
-      text: widget.prdData['objectives'] ?? '',
-    );
-    _timelineController = TextEditingController(
-      text: widget.prdData['timeline'] ?? '',
-    );
+
+    // Try to extract objectives from generated sections
+    String objectives = '';
+    if (widget.prdData['generated_sections'] != null &&
+        widget.prdData['generated_sections']['overview'] != null &&
+        widget.prdData['generated_sections']['overview']['sections'] != null) {
+      final sections =
+          widget.prdData['generated_sections']['overview']['sections'] as List;
+      for (final section in sections) {
+        if (section['title'].toString().contains('Objective')) {
+          objectives = section['content'] ?? '';
+          break;
+        }
+      }
+    }
+    _objectivesController = TextEditingController(text: objectives);
+
+    // Timeline data
+    String timelineText = '';
+    if (widget.prdData['timeline'] != null &&
+        (widget.prdData['timeline'] as List).isNotEmpty) {
+      final timeline = widget.prdData['timeline'] as List;
+      timelineText = timeline
+          .map(
+            (item) =>
+                "${item['time_period'] ?? 'No date'}: ${item['activity'] ?? 'No activity'} (${item['pic'] ?? 'Unassigned'})",
+          )
+          .join('\n\n');
+    }
+    _timelineController = TextEditingController(text: timelineText);
 
     // Team & Roles
     _stakeholders = List<String>.from(widget.prdData['stakeholders'] ?? []);
     _developers = List<String>.from(widget.prdData['developers'] ?? []);
 
     // DARCI roles
-    final darci = widget.prdData['darci'] ?? {};
-    _decisionMaker = darci['decisionMaker'];
-    _accountable = darci['accountable'];
-    _responsible = List<String>.from(darci['responsible'] ?? []);
-    _consulted = List<String>.from(darci['consulted'] ?? []);
-    _informed = List<String>.from(darci['informed'] ?? []);
+    final darciRoles = widget.prdData['darci_roles'] ?? {};
+    _decisionMaker =
+        darciRoles['decider'] != null &&
+                (darciRoles['decider'] as List).isNotEmpty
+            ? (darciRoles['decider'] as List).first.toString()
+            : null;
+    _accountable =
+        darciRoles['accountable'] != null &&
+                (darciRoles['accountable'] as List).isNotEmpty
+            ? (darciRoles['accountable'] as List).first.toString()
+            : null;
+    _responsible = List<String>.from(darciRoles['responsible'] ?? []);
+    _consulted = List<String>.from(darciRoles['consulted'] ?? []);
+    _informed = List<String>.from(darciRoles['informed'] ?? []);
 
     // Project Details
-    _successMetricsController = TextEditingController(
-      text: widget.prdData['successMetrics'] ?? '',
-    );
-    _userStoriesController = TextEditingController(
-      text: widget.prdData['userStories'] ?? '',
-    );
-    _uiuxLinksController = TextEditingController(
-      text: widget.prdData['uiuxLinks'] ?? '',
-    );
-    _referencesController = TextEditingController(
-      text: widget.prdData['references'] ?? '',
-    );
-    _additionalNotesController = TextEditingController(
-      text: widget.prdData['additionalNotes'] ?? '',
-    );
-    _constraintsController = TextEditingController(
-      text: widget.prdData['constraints'] ?? '',
-    );
+    // Success metrics
+    String successMetricsText = '';
+    if (widget.prdData['generated_sections'] != null &&
+        widget.prdData['generated_sections']['success_metrics'] != null &&
+        widget.prdData['generated_sections']['success_metrics']['metrics'] !=
+            null) {
+      final metrics =
+          widget.prdData['generated_sections']['success_metrics']['metrics']
+              as List;
+      successMetricsText = metrics
+          .map(
+            (metric) =>
+                "${metric['name'] ?? 'Unnamed Metric'}: ${metric['definition'] ?? 'No definition'}\nCurrent: ${metric['current'] ?? 'N/A'}, Target: ${metric['target'] ?? 'N/A'}",
+          )
+          .join('\n\n');
+    }
+    _successMetricsController = TextEditingController(text: successMetricsText);
+
+    // User stories
+    String userStoriesText = '';
+    if (widget.prdData['generated_sections'] != null &&
+        widget.prdData['generated_sections']['user_stories'] != null &&
+        widget.prdData['generated_sections']['user_stories']['stories'] !=
+            null) {
+      final stories =
+          widget.prdData['generated_sections']['user_stories']['stories']
+              as List;
+      userStoriesText = stories
+          .map(
+            (story) =>
+                "${story['title'] ?? 'Untitled Story'}\n${story['user_story'] ?? 'No description'}\nAcceptance Criteria: ${story['acceptance_criteria'] ?? 'None'}\nPriority: ${story['priority'] ?? 'Medium'}",
+          )
+          .join('\n\n');
+    }
+    _userStoriesController = TextEditingController(text: userStoriesText);
+
+    // Other details - using empty defaults
+    _uiuxLinksController = TextEditingController(text: '');
+    _referencesController = TextEditingController(text: '');
+    _additionalNotesController = TextEditingController(text: '');
+    _constraintsController = TextEditingController(text: '');
   }
 
   @override
@@ -281,56 +362,76 @@ class _PrdEditScreenState extends State<PrdEditScreen>
         _isLoading = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      try {
+        // Get document owners from the text field
+        List<String> documentOwners = [];
+        if (_ownerController.text.isNotEmpty) {
+          documentOwners =
+              _ownerController.text.split(',').map((e) => e.trim()).toList();
+        }
 
-      // Collect all the updated data
-      final updatedData = {
-        'title': _titleController.text,
-        'version': _versionController.text,
-        'owner': _ownerController.text,
-        'createdDate': _createdDateController.text,
-        'startDate': _startDate.toIso8601String(),
-        'endDate': _endDate.toIso8601String(),
-        'overview': _overviewController.text,
-        'problemStatements': _problemStatementsController.text,
-        'objectives': _objectivesController.text,
-        'timeline': _timelineController.text,
-        'stakeholders': _stakeholders,
-        'developers': _developers,
-        'darci': {
-          'decisionMaker': _decisionMaker,
-          'accountable': _accountable,
+        // Prepare DARCI roles
+        final Map<String, List<String>> darciRoles = {
+          'decider': _decisionMaker != null ? [_decisionMaker!] : [],
+          'accountable': _accountable != null ? [_accountable!] : [],
           'responsible': _responsible,
           'consulted': _consulted,
           'informed': _informed,
-        },
-        'successMetrics': _successMetricsController.text,
-        'userStories': _userStoriesController.text,
-        'uiuxLinks': _uiuxLinksController.text,
-        'references': _referencesController.text,
-        'additionalNotes': _additionalNotesController.text,
-        'constraints': _constraintsController.text,
-        'stage': widget.prdData['stage'] ?? 'In Progress',
+        };
 
-        // Preserve any other fields that might exist in the original data
-        ...widget.prdData,
-      };
+        // Collect all the updated data while preserving the original structure
+        final updatedData = {
+          ...widget.prdData,
+          'product_name': _titleController.text,
+          'document_version': _versionController.text,
+          'document_owners': documentOwners,
+          'project_overview': _overviewController.text,
+          'start_date': _startDate.toIso8601String().split('T')[0],
+          'end_date': _endDate.toIso8601String().split('T')[0],
+          'stakeholders': _stakeholders,
+          'developers': _developers,
+          'darci_roles': darciRoles,
+          'document_stage': widget.prdData['document_stage'] ?? 'draft',
+        };
 
-      setState(() {
-        _isLoading = false;
-        _isDirty = false;
-      });
-
-      if (mounted) {
-        Navigator.pop(context, updatedData);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PRD updated successfully'),
-            backgroundColor: Colors.green,
-          ),
+        // Update the PRD
+        final prdController = Provider.of<PrdController>(
+          context,
+          listen: false,
         );
+        final result = await prdController.updatePrd(
+          widget.prdData['id'].toString(),
+          updatedData,
+        );
+
+        setState(() {
+          _isLoading = false;
+          _isDirty = false;
+        });
+
+        if (mounted) {
+          Navigator.pop(context, updatedData);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PRD updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update PRD: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
