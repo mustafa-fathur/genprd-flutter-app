@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
-import 'package:genprd/features/prd/views/widgets/project_information_step.dart';
-import 'package:genprd/features/prd/views/widgets/project_overview_step.dart';
-import 'package:genprd/features/prd/views/widgets/darci_roles_step.dart';
-import 'package:genprd/features/prd/views/widgets/timeline_step.dart';
-import 'package:genprd/features/prd/views/widgets/personnel_selection_dialog.dart';
-import 'package:genprd/features/prd/views/widgets/generating_prd_screen.dart';
-import 'package:genprd/features/prd/views/widgets/step_indicator.dart';
-import 'package:genprd/features/prd/views/widgets/form_navigation_buttons.dart';
+import 'package:lottie/lottie.dart';
 
 class PrdFormScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -497,5 +491,1166 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
         );
     }
+  }
+}
+
+// GeneratingPrdScreen Widget
+class GeneratingPrdScreen extends StatelessWidget {
+  const GeneratingPrdScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [primaryColor.withOpacity(0.05), Colors.white],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Lottie animation
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Lottie.asset(
+                    'assets/animations/Animation - 1749904686881.json',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Title
+                Text(
+                  'Generating your PRD',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Subtitle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    'Our AI is creating your document based on your inputs',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Progress indicator
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// StepIndicator Widget
+class StepIndicator extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+  final String stepTitle;
+  final double progressValue;
+
+  const StepIndicator({
+    super.key,
+    required this.currentStep,
+    required this.totalSteps,
+    required this.stepTitle,
+    required this.progressValue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Create New PRD',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Let AI help you create a comprehensive Product Requirements Document',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+
+              // Step indicator and progress
+              Row(
+                children: [
+                  Text(
+                    stepTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Step ${currentStep + 1} of $totalSteps',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+
+        // Progress bar
+        LinearProgressIndicator(
+          value: progressValue,
+          backgroundColor: Colors.grey[200],
+          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+          minHeight: 4,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+// FormNavigationButtons Widget
+class FormNavigationButtons extends StatelessWidget {
+  final VoidCallback onNext;
+  final VoidCallback? onPrevious;
+  final bool isLastStep;
+  final bool isFirstStep;
+
+  const FormNavigationButtons({
+    super.key,
+    required this.onNext,
+    this.onPrevious,
+    this.isLastStep = false,
+    this.isFirstStep = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Back button (hidden on first step)
+          if (!isFirstStep)
+            TextButton.icon(
+              onPressed: onPrevious,
+              icon: Icon(Icons.arrow_back, size: 16),
+              label: Text('Back'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: 80), // Placeholder for alignment
+          // Next/Generate button
+          ElevatedButton(
+            onPressed: onNext,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isLastStep ? 'Generate PRD' : 'Next',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (!isLastStep) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward, size: 16),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// PersonnelSelectionDialog Widget
+class PersonnelSelectionDialog extends StatefulWidget {
+  final String title;
+  final List<String> selectedPersonnel;
+  final Function(List<String>) onSave;
+  final bool singleSelect;
+
+  const PersonnelSelectionDialog({
+    super.key,
+    required this.title,
+    required this.selectedPersonnel,
+    required this.onSave,
+    this.singleSelect = false,
+  });
+
+  @override
+  State<PersonnelSelectionDialog> createState() =>
+      _PersonnelSelectionDialogState();
+}
+
+class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
+  late List<String> _tempSelection;
+  final TextEditingController _newPersonController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelection = List<String>.from(widget.selectedPersonnel);
+  }
+
+  @override
+  void dispose() {
+    _newPersonController.dispose();
+    super.dispose();
+  }
+
+  void _addPerson() {
+    final name = _newPersonController.text.trim();
+    if (name.isNotEmpty) {
+      setState(() {
+        if (widget.singleSelect) {
+          _tempSelection.clear();
+        }
+        if (!_tempSelection.contains(name)) {
+          _tempSelection.add(name);
+        }
+        _newPersonController.clear();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Dialog title and close button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Add new person field
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _newPersonController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter name',
+                      hintStyle: TextStyle(fontSize: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    onSubmitted: (_) => _addPerson(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: _addPerson,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
+            ),
+
+            // Selected people chips
+            if (_tempSelection.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Text(
+                'Selected:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: primaryColor,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    _tempSelection.map((person) {
+                      return Chip(
+                        label: Text(
+                          person,
+                          style: TextStyle(fontSize: 13, color: primaryColor),
+                        ),
+                        backgroundColor: primaryColor.withOpacity(0.1),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          setState(() {
+                            _tempSelection.remove(person);
+                          });
+                        },
+                        visualDensity: VisualDensity.compact,
+                        labelPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: -2,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      );
+                    }).toList(),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+
+            // Action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    // Add any current input before saving
+                    if (_newPersonController.text.trim().isNotEmpty) {
+                      _addPerson();
+                    }
+                    widget.onSave(_tempSelection);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// TimelineStep Widget
+class TimelineStep extends StatelessWidget {
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final Function(bool isStartDate) selectDate;
+
+  const TimelineStep({
+    super.key,
+    required this.startDate,
+    required this.endDate,
+    required this.selectDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Timeline and milestones for your project',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+
+          // Start Date
+          Text(
+            'Start Date *',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildDateField(
+            context: context,
+            label: 'Start Date',
+            value:
+                startDate != null
+                    ? DateFormat('MM/dd/yyyy').format(startDate!)
+                    : 'Select date',
+            onTap: () => selectDate(true),
+          ),
+          const SizedBox(height: 20),
+
+          // End Date
+          Text(
+            'End Date *',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildDateField(
+            context: context,
+            label: 'End Date',
+            value:
+                endDate != null
+                    ? DateFormat('MM/dd/yyyy').format(endDate!)
+                    : 'Select date',
+            onTap: () => selectDate(false),
+          ),
+
+          // Project duration
+          if (startDate != null && endDate != null) ...[
+            const SizedBox(height: 16),
+            _buildDurationInfo(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, color: primaryColor, size: 18),
+            const SizedBox(width: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                color:
+                    value == 'Select date'
+                        ? Colors.grey.shade500
+                        : theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDurationInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final days = endDate!.difference(startDate!).inDays;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            CupertinoIcons.calendar_badge_plus,
+            color: theme.colorScheme.primary,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Project duration: $days days (${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)})',
+              style: TextStyle(fontSize: 13, color: theme.colorScheme.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ProjectOverviewStep Widget
+class ProjectOverviewStep extends StatelessWidget {
+  final TextEditingController projectOverviewController;
+
+  const ProjectOverviewStep({
+    super.key,
+    required this.projectOverviewController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Detailed description that AI will enhance',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+
+          // Project Description
+          _buildFormField(
+            context: context,
+            label: 'Project Description *',
+            controller: projectOverviewController,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a project description';
+              }
+              return null;
+            },
+            icon: CupertinoIcons.text_alignleft,
+            maxLines: 5,
+            hint:
+                'Describe your product goals, features, target audience, etc.',
+          ),
+          const SizedBox(height: 20),
+
+          // AI enhancement note
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.sparkles,
+                  color: theme.colorScheme.primary,
+                  size: 18,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'AI will enhance this description with detailed requirements',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.primary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required BuildContext context,
+    required String label,
+    required TextEditingController controller,
+    required String? Function(String?) validator,
+    IconData? icon,
+    int maxLines = 1,
+    String? hint,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              prefixIcon:
+                  icon != null
+                      ? Icon(icon, color: primaryColor, size: 20)
+                      : null,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            validator: validator,
+            maxLines: maxLines,
+            cursorColor: primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ProjectInformationStep Widget
+class ProjectInformationStep extends StatelessWidget {
+  final TextEditingController productNameController;
+  final TextEditingController documentVersionController;
+  final List<String> documentOwners;
+  final List<String> developers;
+  final List<String> stakeholders;
+  final Function(List<String>) updateDocumentOwners;
+  final Function(List<String>) updateDevelopers;
+  final Function(List<String>) updateStakeholders;
+  final Function(String, List<String>, Function(List<String>))
+  showPersonnelSelectionDialog;
+
+  const ProjectInformationStep({
+    super.key,
+    required this.productNameController,
+    required this.documentVersionController,
+    required this.documentOwners,
+    required this.developers,
+    required this.stakeholders,
+    required this.updateDocumentOwners,
+    required this.updateDevelopers,
+    required this.updateStakeholders,
+    required this.showPersonnelSelectionDialog,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Basic information about your project and team',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+
+          // Product Name field
+          _buildFormField(
+            context: context,
+            label: 'Product Name *',
+            controller: productNameController,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a product name';
+              }
+              return null;
+            },
+            icon: CupertinoIcons.doc_text,
+          ),
+          const SizedBox(height: 20),
+
+          // Document Version field
+          _buildFormField(
+            context: context,
+            label: 'Document Version *',
+            controller: documentVersionController,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a document version';
+              }
+              return null;
+            },
+            icon: CupertinoIcons.tag,
+          ),
+          const SizedBox(height: 20),
+
+          // Document Owners
+          _buildTeamSection(
+            context: context,
+            title: 'Document Owners *',
+            icon: CupertinoIcons.person_2,
+            selectedMembers: documentOwners,
+            onTap: () {
+              showPersonnelSelectionDialog(
+                'Select Document Owners',
+                documentOwners,
+                updateDocumentOwners,
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // Developers
+          _buildTeamSection(
+            context: context,
+            title: 'Developers *',
+            icon: CupertinoIcons.person_2_fill,
+            selectedMembers: developers,
+            onTap: () {
+              showPersonnelSelectionDialog(
+                'Select Developers',
+                developers,
+                updateDevelopers,
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // Stakeholders
+          _buildTeamSection(
+            context: context,
+            title: 'Stakeholders *',
+            icon: CupertinoIcons.person_3,
+            selectedMembers: stakeholders,
+            onTap: () {
+              showPersonnelSelectionDialog(
+                'Select Stakeholders',
+                stakeholders,
+                updateStakeholders,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required BuildContext context,
+    required String label,
+    required TextEditingController controller,
+    required String? Function(String?) validator,
+    IconData? icon,
+    int maxLines = 1,
+    String? hint,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              prefixIcon:
+                  icon != null
+                      ? Icon(icon, color: primaryColor, size: 20)
+                      : null,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            validator: validator,
+            maxLines: maxLines,
+            cursorColor: primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeamSection({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required List<String> selectedMembers,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final textTheme = theme.textTheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: primaryColor, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            if (selectedMembers.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    selectedMembers.map((member) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          member,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tap to select',
+                style: textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// DarciRolesStep Widget
+class DarciRolesStep extends StatelessWidget {
+  final List<String> deciderRoles;
+  final List<String> accountableRoles;
+  final List<String> responsibleRoles;
+  final List<String> consultedRoles;
+  final List<String> informedRoles;
+  final Function(List<String>) updateDeciderRoles;
+  final Function(List<String>) updateAccountableRoles;
+  final Function(List<String>) updateResponsibleRoles;
+  final Function(List<String>) updateConsultedRoles;
+  final Function(List<String>) updateInformedRoles;
+  final Function(String, List<String>, Function(List<String>))
+  showPersonnelSelectionDialog;
+
+  const DarciRolesStep({
+    super.key,
+    required this.deciderRoles,
+    required this.accountableRoles,
+    required this.responsibleRoles,
+    required this.consultedRoles,
+    required this.informedRoles,
+    required this.updateDeciderRoles,
+    required this.updateAccountableRoles,
+    required this.updateResponsibleRoles,
+    required this.updateConsultedRoles,
+    required this.updateInformedRoles,
+    required this.showPersonnelSelectionDialog,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Define the roles and responsibilities for this project',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+
+          // Role: Decider
+          _buildRoleSection(
+            context: context,
+            title: 'Decider *',
+            description: 'Who makes the final decisions on project direction',
+            selectedMembers: deciderRoles,
+            onTap:
+                () => showPersonnelSelectionDialog(
+                  'Select Decider',
+                  deciderRoles,
+                  updateDeciderRoles,
+                ),
+          ),
+          const SizedBox(height: 20),
+
+          // Role: Accountable
+          _buildRoleSection(
+            context: context,
+            title: 'Accountable *',
+            description:
+                'Who is accountable for the successful delivery of this project',
+            selectedMembers: accountableRoles,
+            onTap:
+                () => showPersonnelSelectionDialog(
+                  'Select Accountable',
+                  accountableRoles,
+                  updateAccountableRoles,
+                ),
+          ),
+          const SizedBox(height: 20),
+
+          // Role: Responsible
+          _buildRoleSection(
+            context: context,
+            title: 'Responsible *',
+            description:
+                'Who is responsible for implementing the project requirements',
+            selectedMembers: responsibleRoles,
+            onTap:
+                () => showPersonnelSelectionDialog(
+                  'Select Responsible',
+                  responsibleRoles,
+                  updateResponsibleRoles,
+                ),
+          ),
+          const SizedBox(height: 20),
+
+          // Role: Consulted
+          _buildRoleSection(
+            context: context,
+            title: 'Consulted',
+            description: 'Who will be consulted for expertise on this project',
+            selectedMembers: consultedRoles,
+            onTap:
+                () => showPersonnelSelectionDialog(
+                  'Select Consulted',
+                  consultedRoles,
+                  updateConsultedRoles,
+                ),
+          ),
+          const SizedBox(height: 20),
+
+          // Role: Informed
+          _buildRoleSection(
+            context: context,
+            title: 'Informed',
+            description: 'Who needs to be kept informed about this project',
+            selectedMembers: informedRoles,
+            onTap:
+                () => showPersonnelSelectionDialog(
+                  'Select Informed',
+                  informedRoles,
+                  updateInformedRoles,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleSection({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required List<String> selectedMembers,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final textTheme = theme.textTheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            if (selectedMembers.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    selectedMembers.map((member) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          member,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tap to select',
+                style: textTheme.bodySmall?.copyWith(
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

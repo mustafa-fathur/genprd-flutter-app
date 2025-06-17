@@ -5,10 +5,14 @@ import 'package:genprd/shared/config/api_config.dart';
 import 'package:genprd/shared/services/api_interceptor.dart';
 import 'package:genprd/features/auth/services/auth_service.dart';
 import 'package:genprd/features/prd/models/prd_model.dart';
-
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 class PrdService {
   final ApiInterceptor _apiInterceptor;
-
+  final Dio _dio = Dio();
   PrdService({ApiInterceptor? apiInterceptor})
     : _apiInterceptor = apiInterceptor ?? ApiInterceptor(AuthService());
 
@@ -243,22 +247,141 @@ class PrdService {
   // Download PRD
   Future<Map<String, dynamic>> downloadPrd(String id) async {
     try {
-      final response = await _apiInterceptor.interceptRequest(() async {
-        return await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/prd/$id/download'),
-          headers: await ApiConfig.getHeaders(),
-        );
-      });
+      // Request permission untuk storage
+      if (await _requestStoragePermission()) {
+        final response = await _apiInterceptor.interceptRequest(() async {
+          return await http.get(
+            Uri.parse('${ApiConfig.baseUrl}/prd/$id/download'),
+            headers: await ApiConfig.getHeaders(),
+          );
+        });
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['data'] ?? {};
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          print("$responseData >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+          
+          final data = responseData['data'] ?? {};
+          final downloadUrl = data['download_url'];
+          final fileName = data['file_name'];
+          
+          if (downloadUrl != null && fileName != null) {
+            // Download file dari URL
+            final filePath = await _downloadFile(downloadUrl, fileName);
+            
+            return {
+              ...data,
+              'local_file_path': filePath,
+              'download_status': 'completed'
+            };
+          } else {
+            throw Exception('Download URL or filename not found in response');
+          }
+        } else {
+          throw Exception('Failed to download PRD: ${response.reasonPhrase}');
+        }
       } else {
-        throw Exception('Failed to download PRD: ${response.reasonPhrase}');
+        throw Exception('Storage permission denied');
       }
     } catch (e) {
       debugPrint('Error downloading PRD: $e');
       rethrow;
+    }
+  }
+
+  Future<bool> _requestStoragePermission() async {
+    if (Platform.isAndroid) {
+      // Check Android version
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkVersion = androidInfo.version.sdkInt;
+      
+      print('Android SDK Version: $sdkVersion');
+      
+      if (sdkVersion >= 33) {
+        // Android 13+ (API 33+) - Request media permissions
+        final List<Permission> permissions = [
+          Permission.photos,
+          Permission.videos,
+          Permission.audio,
+        ];
+        
+        Map<Permission, PermissionStatus> statuses = await permissions.request();
+        
+        // Check if any media permission is granted
+        bool hasMediaPermission = statuses.values.any(
+          (status) => status == PermissionStatus.granted
+        );
+        
+        if (!hasMediaPermission) {
+          print('Media permissions denied, trying manage external storage');
+          final manageStorageStatus = await Permission.manageExternalStorage.request();
+          return manageStorageStatus == PermissionStatus.granted;
+        }
+        
+        return hasMediaPermission;
+      } else if (sdkVersion >= 30) {
+        // Android 11-12 (API 30-32) - Request manage external storage
+        final manageStorageStatus = await Permission.manageExternalStorage.status;
+        
+        if (manageStorageStatus.isDenied) {
+          final result = await Permission.manageExternalStorage.request();
+          return result == PermissionStatus.granted;
+        }
+        
+        return manageStorageStatus == PermissionStatus.granted;
+      } else {
+        // Android 10 and below - Use legacy storage permission
+        final storageStatus = await Permission.storage.status;
+        
+        if (storageStatus.isDenied) {
+          final result = await Permission.storage.request();
+          return result == PermissionStatus.granted;
+        }
+        
+        return storageStatus == PermissionStatus.granted;
+      }
+    }
+    
+    return true; // iOS doesn't need storage permission for Downloads
+  }
+
+  Future<String> _downloadFile(String url, String fileName) async {
+    try {
+      // Dapatkan direktori Downloads
+      Directory? downloadsDirectory;
+      
+      if (Platform.isAndroid) {
+        // Untuk Android, gunakan external storage Downloads
+        downloadsDirectory = Directory('/storage/emulated/0/Download');
+        if (!await downloadsDirectory.exists()) {
+          downloadsDirectory = await getExternalStorageDirectory();
+        }
+      } else {
+        // Untuk iOS
+        downloadsDirectory = await getApplicationDocumentsDirectory();
+      }
+
+      if (downloadsDirectory == null) {
+        throw Exception('Could not access downloads directory');
+      }
+
+      final filePath = '${downloadsDirectory.path}/$fileName';
+      
+      // Download file menggunakan Dio
+      await _dio.download(
+        url,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            final progress = (received / total * 100).toStringAsFixed(0);
+            print('Download progress: $progress%');
+          }
+        },
+      );
+
+      print('File downloaded to: $filePath');
+      return filePath;
+    } catch (e) {
+      throw Exception('Failed to download file: $e');
     }
   }
 

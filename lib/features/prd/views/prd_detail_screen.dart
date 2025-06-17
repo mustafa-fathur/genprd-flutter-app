@@ -8,15 +8,739 @@ import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/widgets/loading_widget.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/features/prd/models/prd_model.dart';
-import 'package:genprd/features/prd/views/widgets/prd_detail_header.dart';
-import 'package:genprd/features/prd/views/widgets/section_header.dart';
-import 'package:genprd/features/prd/views/widgets/content_card.dart';
-import 'package:genprd/features/prd/views/widgets/info_card.dart';
-import 'package:genprd/features/prd/views/widgets/darci_role_card.dart';
-import 'package:genprd/features/prd/views/widgets/timeline_item.dart';
-import 'package:genprd/features/prd/views/widgets/success_metric_item.dart';
-import 'package:genprd/features/prd/views/widgets/user_story_item.dart';
 import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
+
+// Embedded widgets (previously in separate files)
+class PrdDetailHeader extends StatelessWidget {
+  final String version;
+  final String updatedAt;
+  final String currentStage;
+  final Function(String?) onStageChanged;
+
+  const PrdDetailHeader({
+    super.key,
+    required this.version,
+    required this.updatedAt,
+    required this.currentStage,
+    required this.onStageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Version $version',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Last Updated: ${_formatDateTime(updatedAt)}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          _buildStageSelector(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStageSelector(BuildContext context) {
+    final Color badgeColor = _getStageBadgeColor(currentStage);
+    final String displayStage = _getDisplayStage(currentStage);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: badgeColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: badgeColor.withOpacity(0.3), width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: currentStage,
+          isDense: true,
+          borderRadius: BorderRadius.circular(8),
+          icon: Icon(CupertinoIcons.chevron_down, size: 14, color: badgeColor),
+          style: TextStyle(
+            color: badgeColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          items: [
+            _buildDropdownItem('draft', 'Draft'),
+            _buildDropdownItem('inprogress', 'In Progress'),
+            _buildDropdownItem('finished', 'Finished'),
+            _buildDropdownItem('archived', 'Archived'),
+          ],
+          onChanged: onStageChanged,
+        ),
+      ),
+    );
+  }
+
+  DropdownMenuItem<String> _buildDropdownItem(String value, String label) {
+    final Color badgeColor = _getStageBadgeColor(value);
+
+    return DropdownMenuItem(
+      value: value,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Text(
+          label,
+          style: TextStyle(color: badgeColor, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  String _getDisplayStage(String stage) {
+    switch (stage.toLowerCase()) {
+      case 'inprogress':
+        return 'In Progress';
+      case 'draft':
+        return 'Draft';
+      case 'finished':
+        return 'Finished';
+      case 'archived':
+        return 'Archived';
+      default:
+        return stage;
+    }
+  }
+
+  String _formatDateTime(String dateString) {
+    if (dateString.isEmpty) return 'Unknown date';
+
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      return DateFormat('dd MMM yyyy HH:mm').format(date);
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+
+  Color _getStageBadgeColor(String stage) {
+    switch (stage.toLowerCase()) {
+      case 'draft':
+        return AppTheme.badgeColors['Draft'] ?? const Color(0xFFF59E0B);
+      case 'inprogress':
+        return AppTheme.badgeColors['In Progress'] ?? const Color(0xFF2563EB);
+      case 'finished':
+        return AppTheme.badgeColors['Finished'] ?? const Color(0xFF10B981);
+      case 'archived':
+        return AppTheme.badgeColors['Archived'] ?? const Color(0xFF6B7280);
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+
+  const SectionHeader({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Divider(color: Colors.grey.shade200, thickness: 1),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class ContentCard extends StatelessWidget {
+  final String content;
+  final EdgeInsetsGeometry? padding;
+  final double? elevation;
+
+  const ContentCard({
+    super.key,
+    required this.content,
+    this.padding,
+    this.elevation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: elevation ?? 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: Text(
+          content,
+          style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+class InfoCard extends StatelessWidget {
+  final List<Widget> children;
+  final EdgeInsetsGeometry? padding;
+  final double? elevation;
+
+  const InfoCard({
+    super.key,
+    required this.children,
+    this.padding,
+    this.elevation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: elevation ?? 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final double? labelWidth;
+
+  const InfoRow({
+    super.key,
+    required this.label,
+    required this.value,
+    this.labelWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: labelWidth ?? 130,
+            child: Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.primaryColor,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value, style: textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class DarciRoleCard extends StatelessWidget {
+  final String role;
+  final String people;
+  final String guidelines;
+
+  const DarciRoleCard({
+    super.key,
+    required this.role,
+    required this.people,
+    required this.guidelines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    // Capitalize the first letter of the role
+    final String capitalizedRole = _capitalizeRole(role);
+    final IconData roleIcon = _getRoleIcon(role);
+    final Color roleColor = _getRoleColor(role, theme);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Role title with icon
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: roleColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(roleIcon, color: roleColor, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  capitalizedRole,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: roleColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // People assigned to this role
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    'People:',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(child: Text(people, style: textTheme.bodyMedium)),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Role guidelines
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    'Guidelines:',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(child: Text(guidelines, style: textTheme.bodyMedium)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _capitalizeRole(String role) {
+    if (role.isEmpty) return role;
+
+    // Special case for DARCI acronym roles
+    switch (role.toLowerCase()) {
+      case 'decider':
+        return 'Decider (D)';
+      case 'accountable':
+        return 'Accountable (A)';
+      case 'responsible':
+        return 'Responsible (R)';
+      case 'consulted':
+        return 'Consulted (C)';
+      case 'informed':
+        return 'Informed (I)';
+      default:
+        // Generic capitalization
+        return '${role[0].toUpperCase()}${role.substring(1).toLowerCase()}';
+    }
+  }
+
+  IconData _getRoleIcon(String role) {
+    switch (role.toLowerCase()) {
+      case 'decider':
+        return CupertinoIcons.checkmark_seal_fill;
+      case 'accountable':
+        return CupertinoIcons.person_crop_circle_badge_checkmark;
+      case 'responsible':
+        return CupertinoIcons.person_crop_circle_fill_badge_checkmark;
+      case 'consulted':
+        return CupertinoIcons.chat_bubble_2_fill;
+      case 'informed':
+        return CupertinoIcons.info_circle_fill;
+      default:
+        return CupertinoIcons.person_fill;
+    }
+  }
+
+  Color _getRoleColor(String role, ThemeData theme) {
+    switch (role.toLowerCase()) {
+      case 'decider':
+        return Colors.purple;
+      case 'accountable':
+        return Colors.indigo;
+      case 'responsible':
+        return theme.primaryColor;
+      case 'consulted':
+        return Colors.amber.shade700;
+      case 'informed':
+        return Colors.teal;
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+}
+
+class TimelineItem extends StatelessWidget {
+  final String timePeriod;
+  final String activity;
+  final String? pic;
+
+  const TimelineItem({
+    super.key,
+    required this.timePeriod,
+    required this.activity,
+    this.pic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Timeline indicator
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(width: 2, height: 40, color: Colors.grey.shade300),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Timeline content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  timePeriod,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(activity, style: const TextStyle(fontSize: 15)),
+                if (pic != null && pic!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'PIC: $pic',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SuccessMetricItem extends StatelessWidget {
+  final String name;
+  final String? definition;
+  final String? current;
+  final String? target;
+
+  const SuccessMetricItem({
+    super.key,
+    required this.name,
+    this.definition,
+    this.current,
+    this.target,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Metric name
+            Text(
+              name,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: theme.primaryColor,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Definition
+            if (definition != null && definition!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Definition:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(definition!, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Current value
+            if (current != null && current!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Current:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(current!, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Target value
+            if (target != null && target!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Target:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      target!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class UserStoryItem extends StatelessWidget {
+  final String title;
+  final String userStory;
+  final String? acceptanceCriteria;
+  final String priority;
+
+  const UserStoryItem({
+    super.key,
+    required this.title,
+    required this.userStory,
+    this.acceptanceCriteria,
+    required this.priority,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                ),
+                _buildPriorityBadge(context),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // User story
+            Text(
+              'User Story:',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(userStory, style: theme.textTheme.bodyMedium),
+
+            // Acceptance criteria
+            if (acceptanceCriteria != null &&
+                acceptanceCriteria!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Acceptance Criteria:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(acceptanceCriteria!, style: theme.textTheme.bodyMedium),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityBadge(BuildContext context) {
+    Color badgeColor;
+
+    switch (priority.toLowerCase()) {
+      case 'high':
+        badgeColor = Colors.red.shade700;
+        break;
+      case 'medium':
+        badgeColor = Colors.amber.shade700;
+        break;
+      case 'low':
+        badgeColor = Colors.green.shade700;
+        break;
+      default:
+        badgeColor = Colors.grey.shade700;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: badgeColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: badgeColor.withOpacity(0.3)),
+      ),
+      child: Text(
+        priority.toUpperCase(),
+        style: TextStyle(
+          color: badgeColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
 
 class PrdDetailScreen extends StatefulWidget {
   final String prdId;
@@ -238,16 +962,62 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // PRD Identity section
+                  // 1. PRD Identity section (including team members)
                   _buildExpandableSection(
                     'PRD Identity',
-                    'overview',
-                    _buildPrdIdentitySection(),
+                    'identity',
+                    Column(
+                      children: [
+                        InfoCard(
+                          children: [
+                            InfoRow(
+                              label: 'Product Name:',
+                              value: _prdData!['product_name'] ?? 'Untitled',
+                            ),
+                            InfoRow(
+                              label: 'Document Version:',
+                              value: _prdData!['document_version'] ?? '1.0',
+                            ),
+                            InfoRow(
+                              label: 'Created Date:',
+                              value: _formatDate(_prdData!['created_at']),
+                            ),
+                            if (_prdData!['start_date'] != null)
+                              InfoRow(
+                                label: 'Start Date:',
+                                value:
+                                    _prdData!['start_date'] ?? 'Not specified',
+                              ),
+                            if (_prdData!['end_date'] != null)
+                              InfoRow(
+                                label: 'End Date:',
+                                value: _prdData!['end_date'] ?? 'Not specified',
+                              ),
+                            InfoRow(
+                              label: 'Document Owner:',
+                              value: _getListAsString(
+                                _prdData!['document_owners'],
+                              ),
+                            ),
+                            InfoRow(
+                              label: 'Stakeholders:',
+                              value: _getListAsString(
+                                _prdData!['stakeholders'],
+                              ),
+                            ),
+                            InfoRow(
+                              label: 'Developers:',
+                              value: _getListAsString(_prdData!['developers']),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Project Overview section
+                  // 2. Project Overview section
                   _buildExpandableSection(
                     'Project Overview',
                     'overview',
@@ -260,7 +1030,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Problem Statements section
+                  // 3. Problem Statements section
                   if (_hasGeneratedSectionContent(
                     'overview',
                     'Problem Statement',
@@ -277,7 +1047,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Objectives section
+                  // 4. Objectives section
                   if (_hasGeneratedSectionContent('overview', 'Objective')) ...[
                     _buildExpandableSection(
                       'Objectives',
@@ -289,51 +1059,16 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Team Members section
+                  // 5. DARCI Roles section
                   _buildExpandableSection(
-                    'Team Members',
-                    'team',
-                    InfoCard(
-                      children: [
-                        InfoRow(
-                          label: 'Document Owner:',
-                          value: _getListAsString(_prdData!['document_owners']),
-                        ),
-                        InfoRow(
-                          label: 'Stakeholders:',
-                          value: _getListAsString(_prdData!['stakeholders']),
-                        ),
-                        InfoRow(
-                          label: 'Developers:',
-                          value: _getListAsString(_prdData!['developers']),
-                        ),
-                      ],
-                    ),
+                    'DARCI Roles',
+                    'darci',
+                    _buildDarciRolesSection(),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Timeline section
-                  if (_hasTimeline()) ...[
-                    _buildExpandableSection(
-                      'Timeline',
-                      'timeline',
-                      _buildTimelineSection(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // User Stories section
-                  if (_hasUserStories()) ...[
-                    _buildExpandableSection(
-                      'User Stories',
-                      'user_stories',
-                      _buildUserStoriesSection(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Success Metrics section
+                  // 6. Success Metrics section
                   if (_hasSuccessMetrics()) ...[
                     _buildExpandableSection(
                       'Success Metrics',
@@ -343,12 +1078,24 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // DARCI Roles section
-                  _buildExpandableSection(
-                    'DARCI Roles',
-                    'darci',
-                    _buildDarciRolesSection(),
-                  ),
+                  // 7. User Stories section
+                  if (_hasUserStories()) ...[
+                    _buildExpandableSection(
+                      'User Stories',
+                      'user_stories',
+                      _buildUserStoriesSection(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // 8. Timeline section
+                  if (_hasTimeline()) ...[
+                    _buildExpandableSection(
+                      'Timeline',
+                      'timeline',
+                      _buildTimelineSection(),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -433,35 +1180,6 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPrdIdentitySection() {
-    return InfoCard(
-      children: [
-        InfoRow(
-          label: 'Product Name:',
-          value: _prdData!['product_name'] ?? 'Untitled',
-        ),
-        InfoRow(
-          label: 'Document Version:',
-          value: _prdData!['document_version'] ?? '1.0',
-        ),
-        InfoRow(
-          label: 'Created Date:',
-          value: _formatDate(_prdData!['created_at']),
-        ),
-        if (_prdData!['start_date'] != null)
-          InfoRow(
-            label: 'Start Date:',
-            value: _prdData!['start_date'] ?? 'Not specified',
-          ),
-        if (_prdData!['end_date'] != null)
-          InfoRow(
-            label: 'End Date:',
-            value: _prdData!['end_date'] ?? 'Not specified',
-          ),
-      ],
     );
   }
 
@@ -633,8 +1351,24 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
         break;
       case 'download':
         try {
+          // Show loading indicator
+          _showSnackBar('Downloading PDF...', isError: false);
+
           final result = await prdController.downloadPrd(id);
-          _showSnackBar('PDF generated successfully. Check your downloads.');
+          final filePath = result['local_file_path'] as String?;
+          final fileName = result['file_name'] as String?;
+
+          if (filePath != null) {
+            _showSnackBar('PDF downloaded successfully: ${fileName ?? 'file'}');
+
+            // Optional: Show dialog to open file
+            _showOpenFileDialog(filePath, fileName ?? 'PRD');
+          } else {
+            _showSnackBar(
+              'Download completed but file path not found',
+              isError: true,
+            );
+          }
         } catch (e) {
           _showSnackBar('Failed to download PRD: $e', isError: true);
         }
@@ -660,6 +1394,35 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
         _showDeleteConfirmationDialog();
         break;
     }
+  }
+
+  void _showOpenFileDialog(String filePath, String fileName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Download Complete'),
+          content: Text('$fileName has been downloaded successfully.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await OpenFile.open(filePath);
+                } catch (e) {
+                  _showSnackBar('Could not open file: $e', isError: true);
+                }
+              },
+              child: Text('Open File'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showDeleteConfirmationDialog() {

@@ -127,7 +127,6 @@ class PrdController extends ChangeNotifier {
       // Reload pinned PRDs
       await loadPinnedPrds();
       await loadRecentPrds();
-
       notifyListeners();
       return isPinned;
     } catch (e) {

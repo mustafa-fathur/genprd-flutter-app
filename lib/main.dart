@@ -1,4 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:genprd/firebase_options.dart';
+import 'package:genprd/shared/services/firebase_api.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
@@ -12,6 +15,9 @@ import 'package:google_fonts/google_fonts.dart';
 void main() async {
   // Ensure Flutter is initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await FirebaseApi().initNotifications();
 
   // Initialize deep link handler
   final deepLinkHandler = DeepLinkHandler();

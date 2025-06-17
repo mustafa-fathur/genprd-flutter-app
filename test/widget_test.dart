@@ -7,13 +7,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:genprd/shared/services/deep_link_handler.dart';
 
 import 'package:genprd/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Create a mock DeepLinkHandler
+    final deepLinkHandler = DeepLinkHandler();
+
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(deepLinkHandler: deepLinkHandler));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

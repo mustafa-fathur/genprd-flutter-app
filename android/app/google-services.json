@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "224793841397",
+    "project_id": "genprd-9675b",
+    "storage_bucket": "genprd-9675b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:224793841397:android:bfb71a69f76bc74aa1ffbc",
+        "android_client_info": {
+          "package_name": "com.genprd.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7rn5E1VYu5iQxjKuF_HLWKFkRZHgO0HE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
