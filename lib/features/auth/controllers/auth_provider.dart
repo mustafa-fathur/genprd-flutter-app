@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:genprd/features/auth/services/auth_service.dart';
 import 'package:genprd/features/user/models/user_model.dart';
 import '../models/auth_credentials.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 enum AuthStatus {
   initial,
@@ -99,6 +100,10 @@ class AuthProvider with ChangeNotifier {
 
       // Add a small delay before notifying listeners to ensure navigation works properly
       await Future.delayed(const Duration(milliseconds: 100));
+
+      if (_user != null) {
+        await _sendFcmTokenIfNeeded();
+      }
     } catch (e) {
       debugPrint('Native sign in error: $e');
       _setStatus(AuthStatus.error);
@@ -123,6 +128,7 @@ class AuthProvider with ChangeNotifier {
         debugPrint(
           'Authentication successful via callback, user: ${_user?.email}',
         );
+        await _sendFcmTokenIfNeeded();
         notifyListeners();
         return true;
       } else {
@@ -200,6 +206,7 @@ class AuthProvider with ChangeNotifier {
       if (_user != null) {
         _setStatus(AuthStatus.authenticated);
         debugPrint('Registration successful, user: ${_user?.email}');
+        await _sendFcmTokenIfNeeded();
       } else {
         _setStatus(AuthStatus.error);
         _errorMessage = 'Registration failed: Unknown error';
@@ -236,6 +243,7 @@ class AuthProvider with ChangeNotifier {
       if (_user != null) {
         _setStatus(AuthStatus.authenticated);
         debugPrint('Login successful, user: ${_user?.email}');
+        await _sendFcmTokenIfNeeded();
       } else {
         _setStatus(AuthStatus.error);
         _errorMessage = 'Invalid email or password';
@@ -269,6 +277,21 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = e.toString();
       debugPrint('Reset password error: $e');
       notifyListeners();
+    }
+  }
+
+  // Helper to send FCM token to backend
+  Future<void> _sendFcmTokenIfNeeded() async {
+    debugPrint('[_sendFcmTokenIfNeeded] Called');
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      debugPrint('[_sendFcmTokenIfNeeded] Got FCM token: $fcmToken');
+      if (fcmToken != null) {
+        await _authService.updateFcmToken(fcmToken);
+        debugPrint('[_sendFcmTokenIfNeeded] Sent FCM token to backend');
+      }
+    } catch (e) {
+      debugPrint('[_sendFcmTokenIfNeeded] Error: $e');
     }
   }
 }

@@ -5,6 +5,8 @@ import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:flutter_custom_clippers/flutter_custom_clippers.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:genprd/features/auth/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -59,6 +61,10 @@ class _LoginScreenState extends State<LoginScreen> {
         if (authProvider.isAuthenticated && mounted) {
           debugPrint('Native sign in successful, navigating to dashboard');
           _navigateToDashboard();
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await AuthService().updateFcmToken(fcmToken);
+          }
           return;
         } else {
           debugPrint('Native sign in did not result in authenticated state');
@@ -88,6 +94,10 @@ class _LoginScreenState extends State<LoginScreen> {
               duration: Duration(seconds: 5),
             ),
           );
+        }
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await AuthService().updateFcmToken(fcmToken);
         }
       } catch (webError) {
         debugPrint('Web flow sign in also failed: $webError');
@@ -128,6 +138,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (authProvider.isAuthenticated && mounted) {
         _navigateToDashboard();
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          await AuthService().updateFcmToken(fcmToken);
+        }
       } else if (mounted && authProvider.errorMessage != null) {
         setState(() {
           _errorMessage = authProvider.errorMessage;

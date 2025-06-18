@@ -1,20 +1,395 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
 
-// PersonnelSelectionDialog class
-class PersonnelSelectionDialog extends StatefulWidget {
+// Embedded Widgets from prd_detail_screen.dart
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Divider(color: Colors.grey.shade200, thickness: 1),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _ContentCard extends StatelessWidget {
+  final String content;
+
+  const _ContentCard({required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          content,
+          style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineItem extends StatelessWidget {
+  final String timePeriod;
+  final String activity;
+  final String? pic;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _TimelineItem({
+    required this.timePeriod,
+    required this.activity,
+    this.pic,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: theme.primaryColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(width: 2, height: 40, color: Colors.grey.shade300),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  timePeriod,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.primaryColor,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(activity, style: const TextStyle(fontSize: 15)),
+                if (pic != null && pic!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'PIC: $pic',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 18),
+                      onPressed: onEdit,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                      onPressed: onDelete,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuccessMetricItem extends StatelessWidget {
+  final String name;
+  final String? definition;
+  final String? current;
+  final String? target;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _SuccessMetricItem({
+    required this.name,
+    this.definition,
+    this.current,
+    this.target,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: theme.primaryColor,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (definition != null && definition!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Definition:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(definition!, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (current != null && current!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Current:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(current!, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (target != null && target!.isNotEmpty) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    width: 100,
+                    child: Text(
+                      'Target:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      target!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 18),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UserStoryItem extends StatelessWidget {
+  final String title;
+  final String userStory;
+  final String? acceptanceCriteria;
+  final String priority;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _UserStoryItem({
+    required this.title,
+    required this.userStory,
+    this.acceptanceCriteria,
+    required this.priority,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                ),
+                _buildPriorityBadge(context),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'User Story:',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(userStory, style: theme.textTheme.bodyMedium),
+            if (acceptanceCriteria != null && acceptanceCriteria!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Acceptance Criteria:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(acceptanceCriteria!, style: theme.textTheme.bodyMedium),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 18),
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityBadge(BuildContext context) {
+    Color badgeColor;
+
+    switch (priority.toLowerCase()) {
+      case 'high':
+        badgeColor = Colors.red.shade700;
+        break;
+      case 'medium':
+        badgeColor = Colors.amber.shade700;
+        break;
+      case 'low':
+        badgeColor = Colors.green.shade700;
+        break;
+      default:
+        badgeColor = Colors.grey.shade700;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: badgeColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        priority.toUpperCase(),
+        style: TextStyle(
+          color: badgeColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonnelSelectionDialog extends StatefulWidget {
   final String title;
   final List<String> selectedPersonnel;
   final Function(List<String>) onSave;
   final bool singleSelect;
 
-  const PersonnelSelectionDialog({
-    super.key,
+  const _PersonnelSelectionDialog({
     required this.title,
     required this.selectedPersonnel,
     required this.onSave,
@@ -22,10 +397,10 @@ class PersonnelSelectionDialog extends StatefulWidget {
   });
 
   @override
-  State<PersonnelSelectionDialog> createState() => _PersonnelSelectionDialogState();
+  State<_PersonnelSelectionDialog> createState() => _PersonnelSelectionDialogState();
 }
 
-class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
+class _PersonnelSelectionDialogState extends State<_PersonnelSelectionDialog> {
   late List<String> _tempSelection;
   final TextEditingController _newPersonController = TextEditingController();
 
@@ -87,7 +462,6 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
               ],
             ),
             const SizedBox(height: 20),
-
             Row(
               children: [
                 Expanded(
@@ -123,7 +497,6 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
                 ),
               ],
             ),
-
             if (_tempSelection.isNotEmpty) ...[
               const SizedBox(height: 16),
               const Divider(height: 1),
@@ -146,7 +519,7 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
                       person,
                       style: TextStyle(fontSize: 13, color: primaryColor),
                     ),
-                    backgroundColor: primaryColor.withAlpha(26),
+                    backgroundColor: primaryColor.withValues(alpha: 0.1),
                     deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: () {
                       setState(() {
@@ -164,9 +537,7 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
                 }).toList(),
               ),
             ],
-
             const SizedBox(height: 24),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -208,6 +579,618 @@ class _PersonnelSelectionDialogState extends State<PersonnelSelectionDialog> {
   }
 }
 
+class _DarciRoleDialog extends StatefulWidget {
+  final String role;
+  final List<String> selectedPersonnel;
+  final String guidelines;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _DarciRoleDialog({
+    required this.role,
+    required this.selectedPersonnel,
+    required this.guidelines,
+    required this.onSave,
+  });
+
+  @override
+  State<_DarciRoleDialog> createState() => _DarciRoleDialogState();
+}
+
+class _DarciRoleDialogState extends State<_DarciRoleDialog> {
+  late List<String> _tempPersonnel;
+  late TextEditingController _guidelinesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempPersonnel = List<String>.from(widget.selectedPersonnel);
+    _guidelinesController = TextEditingController(text: widget.guidelines);
+  }
+
+  @override
+  void dispose() {
+    _guidelinesController.dispose();
+    super.dispose();
+  }
+
+  void _addPerson(String name) {
+    if (name.isNotEmpty && !_tempPersonnel.contains(name)) {
+      setState(() {
+        _tempPersonnel.add(name);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Edit ${widget.role}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _guidelinesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Guidelines',
+                hintText: 'Enter guidelines for ${widget.role}',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Enter person name',
+                      hintStyle: const TextStyle(fontSize: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    onSubmitted: _addPerson,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    _addPerson(_guidelinesController.text.trim());
+                    _guidelinesController.clear();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
+            ),
+            if (_tempPersonnel.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Text(
+                'Personnel:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: primaryColor,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _tempPersonnel.map((person) {
+                  return Chip(
+                    label: Text(
+                      person,
+                      style: TextStyle(fontSize: 13, color: primaryColor),
+                    ),
+                    backgroundColor: primaryColor.withValues(alpha: 0.1),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () {
+                      setState(() {
+                        _tempPersonnel.remove(person);
+                      });
+                    },
+                    visualDensity: VisualDensity.compact,
+                    labelPadding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: -2,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                }).toList(),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onSave({
+                      'personnel': _tempPersonnel,
+                      'guidelines': _guidelinesController.text.trim(),
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineItemDialog extends StatefulWidget {
+  final Map<String, dynamic>? item;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _TimelineItemDialog({this.item, required this.onSave});
+
+  @override
+  State<_TimelineItemDialog> createState() => _TimelineItemDialogState();
+}
+
+class _TimelineItemDialogState extends State<_TimelineItemDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _timePeriodController;
+  late TextEditingController _activityController;
+  late TextEditingController _picController;
+
+  @override
+  void initState() {
+    super.initState();
+    _timePeriodController = TextEditingController(text: widget.item?['time_period'] ?? '');
+    _activityController = TextEditingController(text: widget.item?['activity'] ?? '');
+    _picController = TextEditingController(text: widget.item?['pic'] ?? '');
+  }
+
+  @override
+  void dispose() {
+    _timePeriodController.dispose();
+    _activityController.dispose();
+    _picController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.item == null ? 'Add Timeline Item' : 'Edit Timeline Item',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _timePeriodController,
+                decoration: const InputDecoration(
+                  labelText: 'Time Period *',
+                  hintText: 'e.g. Q1 2025',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a time period';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _activityController,
+                decoration: const InputDecoration(
+                  labelText: 'Activity *',
+                  hintText: 'e.g. Complete UI design',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter an activity';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _picController,
+                decoration: const InputDecoration(
+                  labelText: 'Person in Charge (PIC)',
+                  hintText: 'e.g. John Doe',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.onSave({
+                          'time_period': _timePeriodController.text,
+                          'activity': _activityController.text,
+                          'pic': _picController.text,
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserStoryDialog extends StatefulWidget {
+  final Map<String, dynamic>? story;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _UserStoryDialog({this.story, required this.onSave});
+
+  @override
+  State<_UserStoryDialog> createState() => _UserStoryDialogState();
+}
+
+class _UserStoryDialogState extends State<_UserStoryDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleController;
+  late TextEditingController _userStoryController;
+  late TextEditingController _acceptanceCriteriaController;
+  late String _priority;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.story?['title'] ?? '');
+    _userStoryController = TextEditingController(text: widget.story?['user_story'] ?? '');
+    _acceptanceCriteriaController = TextEditingController(text: widget.story?['acceptance_criteria'] ?? '');
+    _priority = widget.story?['priority'] ?? 'Medium';
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _userStoryController.dispose();
+    _acceptanceCriteriaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.story == null ? 'Add User Story' : 'Edit User Story',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title *',
+                  hintText: 'e.g. User Login',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _userStoryController,
+                decoration: const InputDecoration(
+                  labelText: 'User Story *',
+                  hintText: 'As a user, I want to...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a user story';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _acceptanceCriteriaController,
+                decoration: const InputDecoration(
+                  labelText: 'Acceptance Criteria',
+                  hintText: 'e.g. User can log in with email and password',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _priority,
+                decoration: const InputDecoration(
+                  labelText: 'Priority *',
+                  border: OutlineInputBorder(),
+                ),
+                items: ['High', 'Medium', 'Low']
+                    .map((priority) => DropdownMenuItem(
+                  value: priority,
+                  child: Text(priority),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _priority = value;
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a priority';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.onSave({
+                          'title': _titleController.text,
+                          'user_story': _userStoryController.text,
+                          'acceptance_criteria': _acceptanceCriteriaController.text,
+                          'priority': _priority.toLowerCase(),
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuccessMetricDialog extends StatefulWidget {
+  final Map<String, dynamic>? metric;
+  final Function(Map<String, dynamic>) onSave;
+
+  const _SuccessMetricDialog({this.metric, required this.onSave});
+
+  @override
+  State<_SuccessMetricDialog> createState() => _SuccessMetricDialogState();
+}
+
+class _SuccessMetricDialogState extends State<_SuccessMetricDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _definitionController;
+  late TextEditingController _currentController;
+  late TextEditingController _targetController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.metric?['name'] ?? '');
+    _definitionController = TextEditingController(text: widget.metric?['definition'] ?? '');
+    _currentController = TextEditingController(text: widget.metric?['current'] ?? '');
+    _targetController = TextEditingController(text: widget.metric?['target'] ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _definitionController.dispose();
+    _currentController.dispose();
+    _targetController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.metric == null ? 'Add Success Metric' : 'Edit Success Metric',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Metric Name *',
+                  hintText: 'e.g. User Retention Rate',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a metric name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _definitionController,
+                decoration: const InputDecoration(
+                  labelText: 'Definition',
+                  hintText: 'e.g. Percentage of users returning after 30 days',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _currentController,
+                decoration: const InputDecoration(
+                  labelText: 'Current Value',
+                  hintText: 'e.g. 20%',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _targetController,
+                decoration: const InputDecoration(
+                  labelText: 'Target Value',
+                  hintText: 'e.g. 40%',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.onSave({
+                          'name': _nameController.text,
+                          'definition': _definitionController.text,
+                          'current': _currentController.text,
+                          'target': _targetController.text,
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class PrdEditScreen extends StatefulWidget {
   final Map<String, dynamic> prdData;
 
@@ -226,12 +1209,13 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
   late TextEditingController _titleController;
   late TextEditingController _versionController;
   late TextEditingController _ownerController;
-  late TextEditingController _createdDateController;
   late DateTime _startDate;
   late DateTime _endDate;
 
   // Project Overview controllers
   late TextEditingController _overviewController;
+  late TextEditingController _problemStatementController;
+  late TextEditingController _objectivesController;
 
   // Team & Roles
   late List<String> _stakeholders;
@@ -241,28 +1225,96 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
   late List<String> _responsible;
   late List<String> _consulted;
   late List<String> _informed;
+  late String _deciderGuidelines;
+  late String _accountableGuidelines;
+  late String _responsibleGuidelines;
+  late String _consultedGuidelines;
+  late String _informedGuidelines;
+
+  // Timeline, User Stories, Success Metrics
+  late List<Map<String, dynamic>> _timeline;
+  late List<Map<String, dynamic>> _userStories;
+  late List<Map<String, dynamic>> _successMetrics;
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers with data
+    // Initialize Basic Info controllers
     _titleController = TextEditingController(text: widget.prdData['product_name'] ?? '');
     _versionController = TextEditingController(text: widget.prdData['document_version'] ?? '');
     _ownerController = TextEditingController(text: (widget.prdData['document_owners'] as List<dynamic>?)?.join(', ') ?? '');
-    _createdDateController = TextEditingController(text: widget.prdData['created_date'] ?? '');
     _startDate = DateTime.parse(widget.prdData['start_date'] ?? DateTime.now().toIso8601String());
     _endDate = DateTime.parse(widget.prdData['end_date'] ?? DateTime.now().add(const Duration(days: 30)).toIso8601String());
+
+    // Initialize Project Overview
     _overviewController = TextEditingController(text: widget.prdData['project_overview'] ?? '');
-    
-    // Initialize team & roles
+    _problemStatementController = TextEditingController(
+      text: _getGeneratedSectionContent('overview', 'Problem Statement') ?? '',
+    );
+    _objectivesController = TextEditingController(
+      text: _getGeneratedSectionContent('overview', 'Objective') ?? '',
+    );
+
+    // Initialize Team & Roles
     _stakeholders = List<String>.from(widget.prdData['stakeholders'] ?? []);
     _developers = List<String>.from(widget.prdData['developers'] ?? []);
-    final darciRoles = widget.prdData['darci_roles'] as Map<String, dynamic>? ?? {};
-    _decisionMaker = (darciRoles['decider'] as List<dynamic>?)?.isNotEmpty == true ? darciRoles['decider'][0] : null;
-    _accountable = (darciRoles['accountable'] as List<dynamic>?)?.isNotEmpty == true ? darciRoles['accountable'][0] : null;
-    _responsible = List<String>.from(darciRoles['responsible'] ?? []);
-    _consulted = List<String>.from(darciRoles['consulted'] ?? []);
-    _informed = List<String>.from(darciRoles['informed'] ?? []);
+    final Map<String, dynamic>? darciRoles = widget.prdData['darci_roles'] as Map<String, dynamic>?;
+    _decisionMaker = (darciRoles?['decider'] as List<dynamic>?)?.isNotEmpty ?? false ? darciRoles!['decider'][0] as String? : null;
+    _accountable = (darciRoles?['accountable'] as List<dynamic>?)?.isNotEmpty ?? false ? darciRoles!['accountable'][0] as String? : null;
+    _responsible = List<String>.from(darciRoles?['responsible'] ?? []);
+    _consulted = List<String>.from(darciRoles?['consulted'] ?? []);
+    _informed = List<String>.from(darciRoles?['informed'] ?? []);
+
+    // Initialize DARCI Guidelines from generated_sections or fallback
+    final darciFromGenerated = widget.prdData['generated_sections']?['darci']?['roles'] as List<dynamic>?;
+    if (darciFromGenerated != null) {
+      for (var role in darciFromGenerated) {
+        final roleName = role['name']?.toLowerCase();
+        final guidelines = role['guidelines'] ?? '';
+        switch (roleName) {
+          case 'decider':
+            _deciderGuidelines = guidelines;
+            break;
+          case 'accountable':
+            _accountableGuidelines = guidelines;
+            break;
+          case 'responsible':
+            _responsibleGuidelines = guidelines;
+            break;
+          case 'consulted':
+            _consultedGuidelines = guidelines;
+            break;
+          case 'informed':
+            _informedGuidelines = guidelines;
+            break;
+        }
+      }
+    } else {
+      _deciderGuidelines = darciRoles?['decider'] != null
+          ? 'Responsible for making final decisions on project direction and scope.'
+          : '';
+      _accountableGuidelines = darciRoles?['accountable'] != null
+          ? 'Accountable for the successful delivery of the project.'
+          : '';
+      _responsibleGuidelines = darciRoles?['responsible'] != null
+          ? 'Responsible for implementing the project requirements.'
+          : '';
+      _consultedGuidelines = darciRoles?['consulted'] != null
+          ? 'Consulted for expertise in specific areas of the project.'
+          : '';
+      _informedGuidelines = darciRoles?['informed'] != null
+          ? 'Kept informed about project progress and milestones.'
+          : '';
+    }
+
+    // Initialize Timeline, User Stories, Success Metrics
+    _timeline = List<Map<String, dynamic>>.from(widget.prdData['timeline'] ?? []);
+    _userStories = List<Map<String, dynamic>>.from(
+      widget.prdData['generated_sections']?['user_stories']?['stories'] ?? [],
+    );
+    _successMetrics = List<Map<String, dynamic>>.from(
+      widget.prdData['generated_sections']?['success_metrics']?['metrics'] ?? [],
+    );
   }
 
   @override
@@ -270,8 +1322,9 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
     _titleController.dispose();
     _versionController.dispose();
     _ownerController.dispose();
-    _createdDateController.dispose();
     _overviewController.dispose();
+    _problemStatementController.dispose();
+    _objectivesController.dispose();
     super.dispose();
   }
 
@@ -283,7 +1336,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
   }) {
     showDialog(
       context: context,
-      builder: (context) => PersonnelSelectionDialog(
+      builder: (context) => _PersonnelSelectionDialog(
         title: title,
         selectedPersonnel: selectedPersonnel,
         onSave: (selected) {
@@ -297,6 +1350,85 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
     );
   }
 
+  void _showDarciRoleDialog({
+    required String role,
+    required List<String> selectedPersonnel,
+    required String guidelines,
+    required Function(Map<String, dynamic>) onSave,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => _DarciRoleDialog(
+        role: role,
+        selectedPersonnel: selectedPersonnel,
+        guidelines: guidelines,
+        onSave: (data) {
+          onSave(data);
+          setState(() {
+            _isDirty = true;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showTimelineItemDialog({Map<String, dynamic>? item, int? index}) {
+    showDialog(
+      context: context,
+      builder: (context) => _TimelineItemDialog(
+        item: item,
+        onSave: (data) {
+          setState(() {
+            if (index != null) {
+              _timeline[index] = data;
+            } else {
+              _timeline.add(data);
+            }
+            _isDirty = true;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showUserStoryDialog({Map<String, dynamic>? story, int? index}) {
+    showDialog(
+      context: context,
+      builder: (context) => _UserStoryDialog(
+        story: story,
+        onSave: (data) {
+          setState(() {
+            if (index != null) {
+              _userStories[index] = data;
+            } else {
+              _userStories.add(data);
+            }
+            _isDirty = true;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showSuccessMetricDialog({Map<String, dynamic>? metric, int? index}) {
+    showDialog(
+      context: context,
+      builder: (context) => _SuccessMetricDialog(
+        metric: metric,
+        onSave: (data) {
+          setState(() {
+            if (index != null) {
+              _successMetrics[index] = data;
+            } else {
+              _successMetrics.add(data);
+            }
+            _isDirty = true;
+          });
+        },
+      ),
+    );
+  }
+
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -305,11 +1437,11 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
     });
 
     try {
-      List<String> documentOwners = _ownerController.text.isNotEmpty
-          ? _ownerController.text.split(',').map((e) => e.trim()).toList()
-          : [];
+      final List<String> documentOwners = _ownerController.text.isEmpty
+          ? []
+          : _ownerController.text.split(', ').map((e) => e.trim()).toList();
 
-      final Map<String, List<String>> darciRoles = {
+      final Map<String, dynamic> darciRoles = {
         'decider': _decisionMaker != null ? [_decisionMaker!] : [],
         'accountable': _accountable != null ? [_accountable!] : [],
         'responsible': _responsible,
@@ -317,7 +1449,60 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
         'informed': _informed,
       };
 
-      final updatedData = {
+      final Map<String, dynamic> updatedGeneratedSections = {
+        ...?widget.prdData['generated_sections'],
+        'overview': {
+          'sections': [
+            if (_problemStatementController.text.isNotEmpty)
+              {
+                'title': 'Problem Statement',
+                'content': _problemStatementController.text,
+              },
+            if (_objectivesController.text.isNotEmpty)
+              {
+                'title': 'Objective',
+                'content': _objectivesController.text,
+              },
+          ],
+        },
+        'user_stories': {
+          'stories': _userStories,
+        },
+        'success_metrics': {
+          'metrics': _successMetrics,
+        },
+        'darci': {
+          'roles': [
+            {
+              'name': 'Decider',
+              'members': darciRoles['decider'],
+              'guidelines': _deciderGuidelines,
+            },
+            {
+              'name': 'Accountable',
+              'members': darciRoles['accountable'],
+              'guidelines': _accountableGuidelines,
+            },
+            {
+              'name': 'Responsible',
+              'members': darciRoles['responsible'],
+              'guidelines': _responsibleGuidelines,
+            },
+            {
+              'name': 'Consulted',
+              'members': darciRoles['consulted'],
+              'guidelines': _consultedGuidelines,
+            },
+            {
+              'name': 'Informed',
+              'members': darciRoles['informed'],
+              'guidelines': _informedGuidelines,
+            },
+          ],
+        },
+      };
+
+      final Map<String, dynamic> updatedData = {
         ...widget.prdData,
         'product_name': _titleController.text,
         'document_version': _versionController.text,
@@ -328,48 +1513,48 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
         'stakeholders': _stakeholders,
         'developers': _developers,
         'darci_roles': darciRoles,
+        'timeline': _timeline,
+        'generated_sections': updatedGeneratedSections,
         'document_stage': widget.prdData['document_stage'] ?? 'draft',
       };
 
       final prdController = Provider.of<PrdController>(context, listen: false);
       await prdController.updatePrd(widget.prdData['id'].toString(), updatedData);
 
-      setState(() {
-        _isLoading = false;
-        _isDirty = false;
-      });
-
-      if (!mounted) return;
-      
-      Navigator.pop(context, updatedData);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PRD updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isDirty = false;
+        });
+        Navigator.pop(context, updatedData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PRD updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update PRD: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update PRD: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final initialDate = isStartDate ? _startDate : _endDate;
-    final pickedDate = await showDatePicker(
+    final DateTime initialDate = isStartDate ? _startDate : _endDate;
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: isStartDate ? DateTime(2020) : _startDate,
+      firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
@@ -401,11 +1586,23 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
     }
   }
 
+  String? _getGeneratedSectionContent(String sectionName, String title) {
+    final sections = widget.prdData['generated_sections']?[sectionName]?['sections'] as List<dynamic>?;
+    if (sections == null) return null;
+
+    for (var section in sections) {
+      if (section['title'] == title) {
+        return section['content'] as String?;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
         if (!_isDirty) {
@@ -413,7 +1610,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
           return;
         }
 
-        final result = await showDialog<bool>(
+        final canPop = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: const Text('Discard changes?'),
@@ -433,7 +1630,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
           ),
         );
 
-        if (result == true && mounted) {
+        if (canPop == true && mounted) {
           Navigator.pop(context);
         }
       },
@@ -447,7 +1644,7 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
                 Navigator.pop(context);
                 return;
               }
-              
+
               final canPop = await showDialog<bool>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
@@ -485,500 +1682,371 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Form(
-                key: _formKey,
-                child: SingleChildScrollView(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // PRD Identity
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // PRD Identity Card
-                        Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.article_outlined,
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'PRD Identity',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(),
-                                const SizedBox(height: 16),
-
-                                // Product Name
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Product Name',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.grey.shade700,
-                                          ),
-                                        ),
-                                        const Text(
-                                          ' *',
-                                          style: TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _titleController,
-                                      decoration: InputDecoration(
-                                        hintText: 'Enter product name',
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter a product name';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (_) => setState(() => _isDirty = true),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Document Version & Owner
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Document Version',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          TextFormField(
-                                            controller: _versionController,
-                                            decoration: InputDecoration(
-                                              hintText: 'e.g. 1.0',
-                                              filled: true,
-                                              fillColor: Colors.grey.shade50,
-                                              border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade200),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade200),
-                                              ),
-                                            ),
-                                            onChanged: (_) => setState(() => _isDirty = true),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Document Owner',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          TextFormField(
-                                            controller: _ownerController,
-                                            decoration: InputDecoration(
-                                              hintText: 'Enter owner name',
-                                              filled: true,
-                                              fillColor: Colors.grey.shade50,
-                                              border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade200),
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                                borderSide: BorderSide(color: Colors.grey.shade200),
-                                              ),
-                                            ),
-                                            onChanged: (_) => setState(() => _isDirty = true),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-
-                                // Created Date
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Created Date',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _createdDateController,
-                                      decoration: InputDecoration(
-                                        hintText: 'MM/DD/YYYY',
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                      ),
-                                      readOnly: true,
-                                    ),
-                                  ],
-                                ),
-                              ],
+                        const _SectionHeader(title: 'PRD Identity'),
+                        TextFormField(
+                          controller: _titleController,
+                          decoration: InputDecoration(
+                            labelText: 'Product Name *',
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
                             ),
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a product name';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() => _isDirty = true),
                         ),
-
                         const SizedBox(height: 16),
-
-                        // Project Timeline Card
-                        Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      color: Theme.of(context).colorScheme.primary,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _versionController,
+                                decoration: InputDecoration(
+                                  labelText: 'Document Version',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                ),
+                                onChanged: (_) => setState(() => _isDirty = true),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _ownerController,
+                                decoration: InputDecoration(
+                                  labelText: 'Document Owner',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                ),
+                                onChanged: (_) => setState(() => _isDirty = true),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _selectDate(context, true),
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'Start Date',
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: Colors.grey.shade200),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Project Timeline',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
                                         color: Theme.of(context).colorScheme.primary,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('MM/dd/yyyy').format(_startDate),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const Divider(),
-                                const SizedBox(height: 16),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _selectDate(context, false),
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'End Date',
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: Colors.grey.shade200),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('MM/dd/yyyy').format(_endDate),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ActionChip(
+                              label: Text('Stakeholders (${_stakeholders.length})'),
+                              onPressed: () => _showPersonnelSelectionDialog(
+                                title: 'Select Stakeholders',
+                                selectedPersonnel: _stakeholders,
+                                onSave: (selected) => setState(() => _stakeholders = selected),
+                              ),
+                            ),
+                            ActionChip(
+                              label: Text('Developers (${_developers.length})'),
+                              onPressed: () => _showPersonnelSelectionDialog(
+                                title: 'Select Developers',
+                                selectedPersonnel: _developers,
+                                onSave: (selected) => setState(() => _developers = selected),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Start Date',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          InkWell(
-                                            onTap: () => _selectDate(context, true),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                                horizontal: 16,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.grey.shade200),
-                                                color: Colors.grey.shade50,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.calendar_today,
-                                                    size: 18,
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    DateFormat('MM/dd/yyyy').format(_startDate),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'End Date',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          InkWell(
-                                            onTap: () => _selectDate(context, false),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                                horizontal: 16,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.grey.shade200),
-                                                color: Colors.grey.shade50,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.calendar_today,
-                                                    size: 18,
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    DateFormat('MM/dd/yyyy').format(_endDate),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                const SizedBox(height: 16),
+
+                // Project Overview
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionHeader(title: 'Project Overview'),
+                        TextFormField(
+                          controller: _overviewController,
+                          maxLines: 6,
+                          decoration: InputDecoration(
+                            labelText: 'Project Overview *',
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
                             ),
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter project overview';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() => _isDirty = true),
                         ),
-
                         const SizedBox(height: 16),
-
-                        // Project Overview Card
-                        Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
+                        TextFormField(
+                          controller: _problemStatementController,
+                          maxLines: 6,
+                          decoration: InputDecoration(
+                            labelText: 'Problem Statement',
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
+                            ),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.visibility_outlined,
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Project Overview',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(),
-                                const SizedBox(height: 16),
+                          onChanged: (_) => setState(() => _isDirty = true),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _objectivesController,
+                          maxLines: 6,
+                          decoration: InputDecoration(
+                            labelText: 'Objectives',
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
+                            ),
+                          ),
+                          onChanged: (_) => setState(() => _isDirty = true),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Project Overview',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.grey.shade700,
-                                          ),
-                                        ),
-                                        const Text(
-                                          ' *',
-                                          style: TextStyle(
-                                            color: Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _overviewController,
-                                      maxLines: 6,
-                                      decoration: InputDecoration(
-                                        hintText: 'Describe the project purpose and goals',
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter project overview';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (_) => setState(() => _isDirty = true),
-                                    ),
-                                  ],
-                                ),
+                const SizedBox(height: 16),
 
-                                const SizedBox(height: 16),
+                // DARCI Roles
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionHeader(title: 'DARCI Roles'),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ActionChip(
+                              label: const Text('Decision Maker'),
+                              onPressed: () => _showDarciRoleDialog(
+                                role: 'Decider',
+                                selectedPersonnel: _decisionMaker != null ? [_decisionMaker!] : [],
+                                guidelines: _deciderGuidelines,
+                                onSave: (data) => setState(() {
+                                  _decisionMaker = data['personnel'].isNotEmpty ? data['personnel'][0] : null;
+                                  _deciderGuidelines = data['guidelines'];
+                                }),
+                              ),
+                            ),
+                            ActionChip(
+                              label: const Text('Accountable'),
+                              onPressed: () => _showDarciRoleDialog(
+                                role: 'Accountable',
+                                selectedPersonnel: _accountable != null ? [_accountable!] : [],
+                                guidelines: _accountableGuidelines,
+                                onSave: (data) => setState(() {
+                                  _accountable = data['personnel'].isNotEmpty ? data['personnel'][0] : null;
+                                  _accountableGuidelines = data['guidelines'];
+                                }),
+                              ),
+                            ),
+                            ActionChip(
+                              label: Text('Responsible (${_responsible.length})'),
+                              onPressed: () => _showDarciRoleDialog(
+                                role: 'Responsible',
+                                selectedPersonnel: _responsible,
+                                guidelines: _responsibleGuidelines,
+                                onSave: (data) => setState(() {
+                                  _responsible = data['personnel'];
+                                  _responsibleGuidelines = data['guidelines'];
+                                }),
+                              ),
+                            ),
+                            ActionChip(
+                              label: Text('Consulted (${_consulted.length})'),
+                              onPressed: () => _showDarciRoleDialog(
+                                role: 'Consulted',
+                                selectedPersonnel: _consulted,
+                                guidelines: _consultedGuidelines,
+                                onSave: (data) => setState(() {
+                                  _consulted = data['personnel'];
+                                  _consultedGuidelines = data['guidelines'];
+                                }),
+                              ),
+                            ),
+                            ActionChip(
+                              label: Text('Informed (${_informed.length})'),
+                              onPressed: () => _showDarciRoleDialog(
+                                role: 'Informed',
+                                selectedPersonnel: _informed,
+                                guidelines: _informedGuidelines,
+                                onSave: (data) => setState(() {
+                                  _informed = data['personnel'];
+                                  _informedGuidelines = data['guidelines'];
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                                // Team & Roles
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Team & Roles',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: [
-                                        ActionChip(
-                                          label: const Text('Stakeholders'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Stakeholders',
-                                            selectedPersonnel: _stakeholders,
-                                            onSave: (selected) => setState(() => _stakeholders = selected),
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Developers'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Developers',
-                                            selectedPersonnel: _developers,
-                                            onSave: (selected) => setState(() => _developers = selected),
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Decision Maker'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Decision Maker',
-                                            selectedPersonnel: _decisionMaker != null ? [_decisionMaker!] : [],
-                                            onSave: (selected) => setState(() => _decisionMaker = selected.isNotEmpty ? selected[0] : null),
-                                            singleSelect: true,
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Accountable'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Accountable',
-                                            selectedPersonnel: _accountable != null ? [_accountable!] : [],
-                                            onSave: (selected) => setState(() => _accountable = selected.isNotEmpty ? selected[0] : null),
-                                            singleSelect: true,
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Responsible'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Responsible',
-                                            selectedPersonnel: _responsible,
-                                            onSave: (selected) => setState(() => _responsible = selected),
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Consulted'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Consulted',
-                                            selectedPersonnel: _consulted,
-                                            onSave: (selected) => setState(() => _consulted = selected),
-                                          ),
-                                        ),
-                                        ActionChip(
-                                          label: const Text('Informed'),
-                                          onPressed: () => _showPersonnelSelectionDialog(
-                                            title: 'Select Informed',
-                                            selectedPersonnel: _informed,
-                                            onSave: (selected) => setState(() => _informed = selected),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
+                const SizedBox(height: 16),
+
+                // User Stories
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionHeader(title: 'User Stories'),
+                        if (_userStories.isEmpty)
+                          const _ContentCard(content: 'No user stories defined')
+                        else
+                          Column(
+                            children: _userStories.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final story = entry.value;
+                              return _UserStoryItem(
+                                title: story['title'] ?? '',
+                                userStory: story['user_story'] ?? '',
+                                acceptanceCriteria: story['acceptance_criteria'] as String?,
+                                priority: (story['priority'] as String?)?.toString().toUpperCaseFirst() ?? 'Medium',
+                                onEdit: () => _showUserStoryDialog(story: story, index: index),
+                                onDelete: () {
+                                  setState(() {
+                                    _userStories.removeAt(index);
+                                    _isDirty = true;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showUserStoryDialog(),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add User Story'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
                             ),
                           ),
                         ),
@@ -986,44 +2054,162 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
                     ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 16),
+
+                // Success Metrics
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionHeader(title: 'Success Metrics'),
+                        if (_successMetrics.isEmpty)
+                          const _ContentCard(content: 'No success metrics defined')
+                        else
+                          Column(
+                            children: _successMetrics.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final metric = entry.value;
+                              return _SuccessMetricItem(
+                                name: metric['name'] ?? '',
+                                definition: metric['definition'] as String?,
+                                current: metric['current'] as String?,
+                                target: metric['target'] as String?,
+                                onEdit: () => _showSuccessMetricDialog(metric: metric, index: index),
+                                onDelete: () {
+                                  setState(() {
+                                    _successMetrics.removeAt(index);
+                                    _isDirty = true;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showSuccessMetricDialog(),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Success Metric'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Timeline
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionHeader(title: 'Timeline'),
+                        if (_timeline.isEmpty)
+                          const _ContentCard(content: 'No timeline items defined')
+                        else
+                          Column(
+                            children: _timeline.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              return _TimelineItem(
+                                timePeriod: item['time_period'] ?? '',
+                                activity: item['activity'] ?? '',
+                                pic: item['pic'] as String?,
+                                onEdit: () => _showTimelineItemDialog(item: item, index: index),
+                                onDelete: () {
+                                  setState(() {
+                                    _timeline.removeAt(index);
+                                    _isDirty = true;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showTimelineItemDialog(),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Timeline Item'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         floatingActionButton: _isDirty
             ? FloatingActionButton.extended(
-                onPressed: _saveChanges,
-                icon: const Icon(Icons.save),
-                label: const Text('Save'),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-              )
+          onPressed: _saveChanges,
+          icon: const Icon(Icons.save),
+          label: const Text('Save'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        )
             : null,
         bottomNavigationBar: _isDirty
             ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Color.alphaBlend(
-                  Theme.of(context).colorScheme.primary.withAlpha(26),
-                  Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Color.alphaBlend(
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            Colors.white,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.orange),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'You have unsaved changes.',
+                  style: TextStyle(fontSize: 14),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.orange),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'You have unsaved changes.',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: _saveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      child: const Text('Save Changes'),
-                    ),
-                  ],
+              ),
+              ElevatedButton(
+                onPressed: _saveChanges,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
-              )
+                child: const Text('Save Changes'),
+              ),
+            ],
+          ),
+        )
             : null,
       ),
     );
+  }
+}
+
+// Extension for string capitalization
+extension StringExtension on String {
+  String toUpperCaseFirst() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }

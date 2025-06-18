@@ -580,4 +580,36 @@ class AuthService {
       rethrow;
     }
   }
+
+  // Add this method to update FCM token
+  Future<void> updateFcmToken(String fcmToken) async {
+    debugPrint('[updateFcmToken] Called with token: $fcmToken');
+    final accessToken = await TokenStorage.getAccessToken();
+    debugPrint('[updateFcmToken] Got access token: $accessToken');
+    if (accessToken == null) {
+      debugPrint('[updateFcmToken] No access token, skipping FCM update');
+      return;
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/users/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+      debugPrint(
+        '[updateFcmToken] Response: ${response.statusCode} ${response.body}',
+      );
+      if (response.statusCode != 200) {
+        debugPrint(
+          '[updateFcmToken] Failed to update FCM token: ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('[updateFcmToken] Exception: $e');
+    }
+  }
 }
