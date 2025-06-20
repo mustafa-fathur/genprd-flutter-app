@@ -108,18 +108,18 @@ class _MainLayoutState extends State<MainLayout> {
               child: Consumer<UserProvider>(
                 builder: (context, userProvider, _) {
                   final user = userProvider.user;
+                  final hasAvatar =
+                      user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty;
                   return CircleAvatar(
                     radius: 16,
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                    backgroundImage:
-                        user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
-                            ? NetworkImage(user.avatarUrl!)
-                            : null,
+                    foregroundImage:
+                        hasAvatar ? NetworkImage(user!.avatarUrl!) : null,
                     child:
-                        user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                        !hasAvatar
                             ? const Icon(
                               Icons.person,
-                              size: 16,
+                              size: 18,
                               color: AppTheme.primaryColor,
                             )
                             : null,

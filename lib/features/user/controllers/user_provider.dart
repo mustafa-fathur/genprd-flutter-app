@@ -87,9 +87,17 @@ class UserProvider with ChangeNotifier {
   }
 
   // Set user from auth provider
-  void setUser(User user) {
+  void setUser(User? user) {
     _user = user;
-    _status = UserProfileStatus.loaded;
+    _status =
+        user == null ? UserProfileStatus.initial : UserProfileStatus.loaded;
+    notifyListeners();
+  }
+
+  // Clear user data and reset status
+  void clearUser() {
+    _user = null;
+    _status = UserProfileStatus.initial;
     notifyListeners();
   }
 }

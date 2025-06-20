@@ -7,6 +7,7 @@ import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:genprd/features/auth/services/auth_service.dart';
+import 'package:genprd/features/user/controllers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
       debugPrint('Starting Google sign-in process...');
@@ -59,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await authProvider.signInWithGoogleNative();
 
         if (authProvider.isAuthenticated && mounted) {
+          await userProvider.getUserProfile();
           debugPrint('Native sign in successful, navigating to dashboard');
           _navigateToDashboard();
           final fcmToken = await FirebaseMessaging.instance.getToken();
@@ -117,6 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
       setState(() {
@@ -137,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (authProvider.isAuthenticated && mounted) {
+        await userProvider.getUserProfile();
         _navigateToDashboard();
         final fcmToken = await FirebaseMessaging.instance.getToken();
         if (fcmToken != null) {

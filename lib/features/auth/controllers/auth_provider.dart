@@ -3,6 +3,7 @@ import 'package:genprd/features/auth/services/auth_service.dart';
 import 'package:genprd/features/user/models/user_model.dart';
 import '../models/auth_credentials.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
 
 enum AuthStatus {
   initial,
@@ -147,6 +148,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Logout
+  // After calling logout, the caller should clear UserProvider (see main app logic)
   Future<void> logout() async {
     try {
       await _authService.logout();
@@ -163,6 +165,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Force logout (used when token is invalid)
+  // After calling forceLogout, the caller should clear UserProvider (see main app logic)
   Future<void> forceLogout() async {
     debugPrint('Force logout called');
 

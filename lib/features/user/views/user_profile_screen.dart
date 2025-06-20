@@ -356,7 +356,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await authProvider.forceLogout();
 
-      // 3. Navigate to login screen
+      // 3. Clear user provider to reset avatar and user data
+      Provider.of<UserProvider>(context, listen: false).clearUser();
+
+      // 4. Navigate to login screen
       if (mounted) {
         context.go(AppRouter.login);
       }
