@@ -1275,13 +1275,7 @@ class ProjectInformationStep extends StatelessWidget {
             title: 'Document Owners *',
             icon: CupertinoIcons.person_2,
             selectedMembers: documentOwners,
-            onTap: () {
-              showPersonnelSelectionDialog(
-                'Select Document Owners',
-                documentOwners,
-                updateDocumentOwners,
-              );
-            },
+            onChanged: updateDocumentOwners,
           ),
           const SizedBox(height: 20),
 
@@ -1291,13 +1285,7 @@ class ProjectInformationStep extends StatelessWidget {
             title: 'Developers *',
             icon: CupertinoIcons.person_2_fill,
             selectedMembers: developers,
-            onTap: () {
-              showPersonnelSelectionDialog(
-                'Select Developers',
-                developers,
-                updateDevelopers,
-              );
-            },
+            onChanged: updateDevelopers,
           ),
           const SizedBox(height: 20),
 
@@ -1307,13 +1295,7 @@ class ProjectInformationStep extends StatelessWidget {
             title: 'Stakeholders *',
             icon: CupertinoIcons.person_3,
             selectedMembers: stakeholders,
-            onTap: () {
-              showPersonnelSelectionDialog(
-                'Select Stakeholders',
-                stakeholders,
-                updateStakeholders,
-              );
-            },
+            onChanged: updateStakeholders,
           ),
         ],
       ),
@@ -1380,76 +1362,41 @@ class ProjectInformationStep extends StatelessWidget {
     required String title,
     required IconData icon,
     required List<String> selectedMembers,
-    required VoidCallback onTap,
+    required ValueChanged<List<String>> onChanged,
   }) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final textTheme = theme.textTheme;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, color: primaryColor, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                ),
-              ],
+            Icon(icon, color: primaryColor, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
-            if (selectedMembers.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    selectedMembers.map((member) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          member,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ] else ...[
-              const SizedBox(height: 8),
-              Text(
-                'Tap to select',
-                style: textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: InlinePersonnelInput(
+            label: '',
+            personnel: selectedMembers,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1498,159 +1445,213 @@ class DarciRolesStep extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Role: Decider
-          _buildRoleSection(
+          _buildDarciRoleInline(
             context: context,
-            title: 'Decider *',
-            description: 'Who makes the final decisions on project direction',
+            role: 'Decider *',
             selectedMembers: deciderRoles,
-            onTap:
-                () => showPersonnelSelectionDialog(
-                  'Select Decider',
-                  deciderRoles,
-                  updateDeciderRoles,
-                ),
+            onChanged: updateDeciderRoles,
           ),
           const SizedBox(height: 20),
 
           // Role: Accountable
-          _buildRoleSection(
+          _buildDarciRoleInline(
             context: context,
-            title: 'Accountable *',
-            description:
-                'Who is accountable for the successful delivery of this project',
+            role: 'Accountable *',
             selectedMembers: accountableRoles,
-            onTap:
-                () => showPersonnelSelectionDialog(
-                  'Select Accountable',
-                  accountableRoles,
-                  updateAccountableRoles,
-                ),
+            onChanged: updateAccountableRoles,
           ),
           const SizedBox(height: 20),
 
           // Role: Responsible
-          _buildRoleSection(
+          _buildDarciRoleInline(
             context: context,
-            title: 'Responsible *',
-            description:
-                'Who is responsible for implementing the project requirements',
+            role: 'Responsible *',
             selectedMembers: responsibleRoles,
-            onTap:
-                () => showPersonnelSelectionDialog(
-                  'Select Responsible',
-                  responsibleRoles,
-                  updateResponsibleRoles,
-                ),
+            onChanged: updateResponsibleRoles,
           ),
           const SizedBox(height: 20),
 
           // Role: Consulted
-          _buildRoleSection(
+          _buildDarciRoleInline(
             context: context,
-            title: 'Consulted',
-            description: 'Who will be consulted for expertise on this project',
+            role: 'Consulted',
             selectedMembers: consultedRoles,
-            onTap:
-                () => showPersonnelSelectionDialog(
-                  'Select Consulted',
-                  consultedRoles,
-                  updateConsultedRoles,
-                ),
+            onChanged: updateConsultedRoles,
           ),
           const SizedBox(height: 20),
 
           // Role: Informed
-          _buildRoleSection(
+          _buildDarciRoleInline(
             context: context,
-            title: 'Informed',
-            description: 'Who needs to be kept informed about this project',
+            role: 'Informed',
             selectedMembers: informedRoles,
-            onTap:
-                () => showPersonnelSelectionDialog(
-                  'Select Informed',
-                  informedRoles,
-                  updateInformedRoles,
-                ),
+            onChanged: updateInformedRoles,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRoleSection({
+  Widget _buildDarciRoleInline({
     required BuildContext context,
-    required String title,
-    required String description,
+    required String role,
     required List<String> selectedMembers,
-    required VoidCallback onTap,
+    required ValueChanged<List<String>> onChanged,
+    bool singleSelect = false,
   }) {
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final textTheme = theme.textTheme;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          role,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 8),
+        Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: InlinePersonnelInput(
+            label: '',
+            personnel: selectedMembers,
+            onChanged: onChanged,
+            singleSelect: singleSelect,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// InlinePersonnelInput Widget
+class InlinePersonnelInput extends StatefulWidget {
+  final String label;
+  final List<String> personnel;
+  final ValueChanged<List<String>> onChanged;
+  final bool singleSelect;
+  final String? hintText;
+
+  const InlinePersonnelInput({
+    super.key,
+    required this.label,
+    required this.personnel,
+    required this.onChanged,
+    this.singleSelect = false,
+    this.hintText,
+  });
+
+  @override
+  State<InlinePersonnelInput> createState() => _InlinePersonnelInputState();
+}
+
+class _InlinePersonnelInputState extends State<InlinePersonnelInput> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _addPerson() {
+    final name = _controller.text.trim();
+    if (name.isNotEmpty && !widget.personnel.contains(name)) {
+      final updated =
+          widget.singleSelect ? [name] : [...widget.personnel, name];
+      widget.onChanged(updated);
+      _controller.clear();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.label.isNotEmpty)
+          Text(
+            widget.label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        if (widget.personnel.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                widget.personnel
+                    .map(
+                      (person) => Chip(
+                        label: Text(
+                          person,
+                          style: TextStyle(color: primaryColor),
+                        ),
+                        backgroundColor: primaryColor.withOpacity(0.08),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          final updated = List<String>.from(widget.personnel)
+                            ..remove(person);
+                          widget.onChanged(updated);
+                        },
+                        visualDensity: VisualDensity.compact,
+                        labelPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: -2,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    )
+                    .toList(),
+          ),
+        ],
+        const SizedBox(height: 6),
+        Row(
           children: [
-            Text(
-              title,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-            if (selectedMembers.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    selectedMembers.map((member) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          member,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ] else ...[
-              const SizedBox(height: 8),
-              Text(
-                'Tap to select',
-                style: textTheme.bodySmall?.copyWith(
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: widget.hintText ?? 'Enter name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                 ),
+                onSubmitted: (_) => _addPerson(),
               ),
-            ],
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: _addPerson,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
+              ),
+            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
