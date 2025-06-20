@@ -23,6 +23,7 @@ class AppTheme {
   };
 
   static final ThemeData lightTheme = ThemeData(
+    useMaterial3: false,
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,
     fontFamily: 'Inter', // Will use system font if not available
@@ -35,6 +36,7 @@ class AppTheme {
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
       iconTheme: IconThemeData(color: primaryColor),
       titleTextStyle: TextStyle(

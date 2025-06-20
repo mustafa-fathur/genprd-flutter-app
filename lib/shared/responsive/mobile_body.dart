@@ -22,18 +22,12 @@ class MobileBody extends StatelessWidget {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          color: Colors.black.withValues(alpha: 51), // Debug color for AppBar area
-          child: TopBarWidget(
-            title: title,
-            onMenuPressed: onMenuPressed ?? () {},
-          ),
+        child: TopBarWidget(
+          title: title,
+          onMenuPressed: onMenuPressed ?? () {},
         ),
       ),
-      body: Container(
-        color: Colors.black.withValues(alpha: 51), // Debug color for body area
-        child: child,
-      ),
+      body: Container(color: Colors.white, child: child),
     );
   }
 }

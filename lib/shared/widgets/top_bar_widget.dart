@@ -19,6 +19,8 @@ class TopBarWidget extends StatelessWidget {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
+      surfaceTintColor: Colors.white,
+      shadowColor: Colors.transparent,
       automaticallyImplyLeading: false,
       leading: IconButton(
         icon: Icon(Icons.menu, color: primaryColor),

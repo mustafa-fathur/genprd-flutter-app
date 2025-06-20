@@ -65,9 +65,12 @@ class _MainLayoutState extends State<MainLayout> {
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.white,
+        shadowColor: Colors.transparent,
         automaticallyImplyLeading: !showSidebar,
         leading:
             !showSidebar
@@ -174,8 +177,8 @@ class _MainLayoutState extends State<MainLayout> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-          AppRouter.navigateToCreatePrd(context);
-        },
+                      AppRouter.navigateToCreatePrd(context);
+                    },
                     child: const Center(
                       child: Icon(Icons.add, color: Colors.white, size: 30),
                     ),

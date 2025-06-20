@@ -20,39 +20,33 @@ class DesktopBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Colors.black.withValues(alpha: 77), // Debug color for the main Row area
-        child: Row(
-          children: [
-            // Sidebar
-            Container(
-              width: 240,
-              color: Colors.white, // Sidebar has its own color
-              child: Sidebar(
-                onClose: () {}, // No close button needed for desktop sidebar
-              ),
+      body: Row(
+        children: [
+          // Sidebar
+          Container(
+            width: 240,
+            color: Colors.white, // Sidebar has its own color
+            child: Sidebar(
+              onClose: () {}, // No close button needed for desktop sidebar
             ),
-            // Main content area
-            Expanded(
-              child: Container(
-                color: Colors.black.withValues(alpha: 77), // Debug color for main content Column area
-                child: Column(
-                  children: [
-                    // Top Bar
-                    TopBarWidget(title: title, onMenuPressed: () {}),
-                    // Main content
-                    Expanded(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 77), // Debug color for the child area
-                        child: child,
-                      ),
-                    ),
-                  ],
+          ),
+          // Main content area
+          Expanded(
+            child: Column(
+              children: [
+                // Top Bar
+                TopBarWidget(title: title, onMenuPressed: () {}),
+                // Main content
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    child: child,
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       // No bottomNavigationBar for desktop
     );
