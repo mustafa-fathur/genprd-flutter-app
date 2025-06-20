@@ -48,3 +48,4 @@ app.*.map.json
 /.vscode
 /API.md
 /.env
+/android/app/google-services.json

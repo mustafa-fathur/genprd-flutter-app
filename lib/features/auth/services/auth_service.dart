@@ -7,13 +7,13 @@ import 'package:genprd/features/user/models/user_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_credentials.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     // clientId tidak bekerja di Android, gunakan serverClientId
-    serverClientId:
-        '418864732285-cj9knn4bngfn1ra00j32t5njanfvtebg.apps.googleusercontent.com',
+    serverClientId: dotenv.env['GOOGLE_CLIENT_ID'],
   ); // Sign in with Google OAuth URL Launcher
   Future<void> signInWithGoogle() async {
     try {

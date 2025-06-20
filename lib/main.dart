@@ -11,10 +11,13 @@ import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/services/deep_link_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   // Ensure Flutter is initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseApi().initNotifications();

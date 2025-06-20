@@ -1,9 +1,12 @@
 import 'package:genprd/shared/services/token_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
   // Base URLs for different environments
-  static const String _devBaseUrl = 'http://10.0.2.2:3000/api';
-  static const String _prodBaseUrl =
+  static String get _devBaseUrl =>
+      dotenv.env['DEV_API_URL'] ?? 'http://10.0.2.2:3000/api';
+  static String get _prodBaseUrl =>
+      dotenv.env['PROD_API_URL'] ??
       'https://express-backend-418864732285.asia-southeast2.run.app/api';
 
   // Set this to true to use the deployed backend
