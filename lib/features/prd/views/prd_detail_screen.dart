@@ -312,10 +312,8 @@ class DarciRoleCard extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
-    // Capitalize the first letter of the role
-    final String capitalizedRole = _capitalizeRole(role);
+    // Minimalist: use only a simple icon, no colored background
     final IconData roleIcon = _getRoleIcon(role);
-    final Color roleColor = _getRoleColor(role, theme);
 
     return Card(
       elevation: 0,
@@ -329,29 +327,21 @@ class DarciRoleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Role title with icon
+            // Minimalist role title with icon
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: roleColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(roleIcon, color: roleColor, size: 18),
-                ),
-                const SizedBox(width: 12),
+                Icon(roleIcon, color: AppTheme.primaryColor, size: 20),
+                const SizedBox(width: 8),
                 Text(
-                  capitalizedRole,
+                  _capitalizeRole(role),
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: roleColor,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-
             // People assigned to this role
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,7 +359,6 @@ class DarciRoleCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-
             // Role guidelines
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,8 +383,6 @@ class DarciRoleCard extends StatelessWidget {
 
   String _capitalizeRole(String role) {
     if (role.isEmpty) return role;
-
-    // Special case for DARCI acronym roles
     switch (role.toLowerCase()) {
       case 'decider':
         return 'Decider (D)';
@@ -408,7 +395,6 @@ class DarciRoleCard extends StatelessWidget {
       case 'informed':
         return 'Informed (I)';
       default:
-        // Generic capitalization
         return '${role[0].toUpperCase()}${role.substring(1).toLowerCase()}';
     }
   }
@@ -416,34 +402,17 @@ class DarciRoleCard extends StatelessWidget {
   IconData _getRoleIcon(String role) {
     switch (role.toLowerCase()) {
       case 'decider':
-        return CupertinoIcons.checkmark_seal_fill;
+        return Icons.verified_user_outlined;
       case 'accountable':
-        return CupertinoIcons.person_crop_circle_badge_checkmark;
+        return Icons.account_circle_outlined;
       case 'responsible':
-        return CupertinoIcons.person_crop_circle_fill_badge_checkmark;
+        return Icons.assignment_turned_in_outlined;
       case 'consulted':
-        return CupertinoIcons.chat_bubble_2_fill;
+        return Icons.chat_bubble_outline;
       case 'informed':
-        return CupertinoIcons.info_circle_fill;
+        return Icons.info_outline;
       default:
-        return CupertinoIcons.person_fill;
-    }
-  }
-
-  Color _getRoleColor(String role, ThemeData theme) {
-    switch (role.toLowerCase()) {
-      case 'decider':
-        return Colors.purple;
-      case 'accountable':
-        return Colors.indigo;
-      case 'responsible':
-        return theme.primaryColor;
-      case 'consulted':
-        return Colors.amber.shade700;
-      case 'informed':
-        return Colors.teal;
-      default:
-        return Colors.grey.shade700;
+        return Icons.person_outline;
     }
   }
 }
