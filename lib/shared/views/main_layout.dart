@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/responsive/responsive_layout.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
@@ -57,9 +58,19 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    // Use PlatformHelper for enhanced platform-aware responsive design
+    final bool showSidebar = PlatformHelper.shouldShowSidebar(context);
+    final bool useDrawer = PlatformHelper.shouldUseDrawer(context);
+    final EdgeInsets screenPadding = PlatformHelper.getScreenPadding(context);
+
+    // Fallback to existing ResponsiveLayout for backward compatibility
     final bool isDesktop = ResponsiveLayout.isDesktop(context);
     final bool isTablet = ResponsiveLayout.isTablet(context);
-    final bool showSidebar = isDesktop || isTablet;
+    final bool legacyShowSidebar = isDesktop || isTablet;
+
+    // Use the more sophisticated platform-aware logic
+    final bool finalShowSidebar = showSidebar || legacyShowSidebar;
+
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
 
@@ -71,9 +82,9 @@ class _MainLayoutState extends State<MainLayout> {
         elevation: 0,
         surfaceTintColor: Colors.white,
         shadowColor: Colors.transparent,
-        automaticallyImplyLeading: !showSidebar,
+        automaticallyImplyLeading: !finalShowSidebar,
         leading:
-            !showSidebar
+            !finalShowSidebar
                 ? IconButton(
                   icon: const Icon(Icons.menu),
                   padding: EdgeInsets.zero,
@@ -130,16 +141,16 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
-      drawer: !showSidebar ? _buildSidebar() : null,
+      drawer: useDrawer ? _buildSidebar() : null,
       body: Row(
         children: [
-          if (showSidebar) _buildSidebar(isDrawer: false),
+          if (finalShowSidebar) _buildSidebar(isDrawer: false),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: screenPadding,
                   child: Text(
                     widget.title,
                     style: theme.textTheme.headlineMedium?.copyWith(

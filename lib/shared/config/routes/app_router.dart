@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:genprd/features/auth/views/login_screen.dart';
+import 'package:genprd/features/auth/views/auth_callback_screen.dart';
 import 'package:genprd/features/dashboard/views/dashboard_screen.dart';
 import 'package:genprd/features/prd/views/prd_detail_screen.dart';
 import 'package:genprd/features/prd/views/prd_form_screen.dart';
@@ -14,6 +15,7 @@ class AppRouter {
   // Route paths
   static const String splash = '/splash';
   static const String login = '/login';
+  static const String authCallback = '/auth/callback';
   static const String dashboard = '/dashboard';
   static const String allPrds = '/prds';
   static const String pinnedPrds = '/prds/pinned';
@@ -28,6 +30,7 @@ class AppRouter {
   // Screen builder methods for use in unified router
   static Widget buildSplashScreen() => const SplashScreen();
   static Widget buildLoginScreen() => const LoginScreen();
+  static Widget buildAuthCallbackScreen() => const AuthCallbackScreen();
   static Widget buildDashboardScreen() => const DashboardScreen();
   static Widget buildSessionExpiredScreen() => const SessionExpiredScreen();
   static Widget buildAllPrdsScreen() => const PrdListScreen();
@@ -68,6 +71,14 @@ class AppRouter {
         builder: (context, state) {
           debugPrint('Building login screen');
           return buildLoginScreen();
+        },
+      ),
+      GoRoute(
+        path: authCallback,
+        name: 'authCallback',
+        builder: (context, state) {
+          debugPrint('Building auth callback screen');
+          return buildAuthCallbackScreen();
         },
       ),
       GoRoute(

@@ -17,6 +17,7 @@ class ApiConfig {
 
   // Auth endpoints
   static const String googleAuthMobile = '/auth/mobile/google';
+  static const String googleAuthWeb = '/auth/web/google';
   static const String googleAuthVerify = '/auth/verify-google-token';
   static const String refreshToken = '/auth/refresh';
   static const String logout = '/auth/logout';

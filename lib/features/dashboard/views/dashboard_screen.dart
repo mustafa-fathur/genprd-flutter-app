@@ -3,6 +3,7 @@ import 'package:genprd/features/dashboard/controllers/dashboard_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/views/main_layout.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -128,8 +129,9 @@ class _DashboardContentState extends State<DashboardContent> {
           GridView.count(
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            crossAxisCount: 2,
-            childAspectRatio: 1.6,
+            crossAxisCount: PlatformHelper.getGridCrossAxisCount(context),
+            childAspectRatio:
+                PlatformHelper.isMobilePlatform(context) ? 1.8 : 1.6,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [

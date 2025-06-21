@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 
@@ -30,15 +31,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // Check onboarding flag
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
-    if (!hasSeenOnboarding) {
-      _navigateToOnboarding();
-      return;
+    // On non-web platforms, check if onboarding should be shown first.
+    if (!PlatformHelper.isWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+      if (!hasSeenOnboarding) {
+        _navigateToOnboarding();
+        return;
+      }
     }
 
-    // Get auth provider
+    // For web, or for other platforms after onboarding, navigate based on auth status.
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // Navigate based on auth status
@@ -47,9 +50,8 @@ class _SplashScreenState extends State<SplashScreen> {
     } else if (authProvider.status == AuthStatus.unauthenticated ||
         authProvider.status == AuthStatus.error) {
       _navigateToLogin();
-    }
-    // If still in initial or authenticating state, wait for the provider to update
-    else {
+    } else {
+      // If still in initial or authenticating state, wait for the provider to update
       authProvider.addListener(_authStateListener);
     }
   }

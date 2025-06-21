@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_credentials.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -19,8 +20,12 @@ class AuthService {
     try {
       // The backend initiates the Google OAuth flow, and it will handle the redirect_uri to Google.
       // After Google auth, the backend will redirect to our app's deep link (ApiConfig.callbackUrl).
-      final googleAuthInitiationUrl =
-          '${ApiConfig.baseUrl}${ApiConfig.googleAuthMobile}';
+      final authEndpoint =
+          PlatformHelper.isWeb
+              ? ApiConfig.googleAuthWeb
+              : ApiConfig.googleAuthMobile;
+
+      final googleAuthInitiationUrl = '${ApiConfig.baseUrl}$authEndpoint';
       final uri = Uri.parse(googleAuthInitiationUrl);
 
       debugPrint(
