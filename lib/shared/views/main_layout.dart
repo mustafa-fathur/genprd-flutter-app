@@ -28,6 +28,7 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isSidebarVisible = true;
 
   @override
   void initState() {
@@ -58,18 +59,9 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // Use PlatformHelper for enhanced platform-aware responsive design
-    final bool showSidebar = PlatformHelper.shouldShowSidebar(context);
+    final bool isLargeScreen = PlatformHelper.shouldShowSidebar(context);
     final bool useDrawer = PlatformHelper.shouldUseDrawer(context);
     final EdgeInsets screenPadding = PlatformHelper.getScreenPadding(context);
-
-    // Fallback to existing ResponsiveLayout for backward compatibility
-    final bool isDesktop = ResponsiveLayout.isDesktop(context);
-    final bool isTablet = ResponsiveLayout.isTablet(context);
-    final bool legacyShowSidebar = isDesktop || isTablet;
-
-    // Use the more sophisticated platform-aware logic
-    final bool finalShowSidebar = showSidebar || legacyShowSidebar;
 
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
@@ -79,30 +71,37 @@ class _MainLayoutState extends State<MainLayout> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
         surfaceTintColor: Colors.white,
         shadowColor: Colors.transparent,
-        automaticallyImplyLeading: !finalShowSidebar,
-        leading:
-            !finalShowSidebar
-                ? IconButton(
-                  icon: const Icon(Icons.menu),
-                  padding: EdgeInsets.zero,
-                  onPressed: _openDrawer,
-                )
-                : null,
+        elevation: 0,
+        shape: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            if (isLargeScreen) {
+              setState(() {
+                _isSidebarVisible = !_isSidebarVisible;
+              });
+            } else {
+              _openDrawer();
+            }
+          },
+        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/images/logo.png', height: 46),
-            const SizedBox(width: 2),
+            Image.asset('assets/images/logo.png', height: 48),
+            const SizedBox(width: 12),
             Text(
               'GenPRD',
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-                color: primaryColor,
-                letterSpacing: -0.5,
+                fontWeight: FontWeight.w500,
+                fontSize: 22,
+                color: AppTheme.textColor,
               ),
             ),
           ],
@@ -110,6 +109,27 @@ class _MainLayoutState extends State<MainLayout> {
         titleSpacing: 0,
         centerTitle: false,
         actions: [
+          if (isLargeScreen)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Tooltip(
+                message: 'Create New PRD',
+                child: IconButton(
+                  icon: const Icon(CupertinoIcons.add),
+                  onPressed: () {
+                    AppRouter.navigateToCreatePrd(context);
+                  },
+                  style: IconButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.all(10),
+                  ),
+                ),
+              ),
+            ),
           InkWell(
             onTap: () {
               AppRouter.navigateToUserProfile(context);
@@ -122,7 +142,7 @@ class _MainLayoutState extends State<MainLayout> {
                   final hasAvatar =
                       user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty;
                   return CircleAvatar(
-                    radius: 16,
+                    radius: 18,
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                     foregroundImage:
                         hasAvatar ? NetworkImage(user!.avatarUrl!) : null,
@@ -130,7 +150,7 @@ class _MainLayoutState extends State<MainLayout> {
                         !hasAvatar
                             ? const Icon(
                               Icons.person,
-                              size: 18,
+                              size: 20,
                               color: AppTheme.primaryColor,
                             )
                             : null,
@@ -144,7 +164,14 @@ class _MainLayoutState extends State<MainLayout> {
       drawer: useDrawer ? _buildSidebar() : null,
       body: Row(
         children: [
-          if (finalShowSidebar) _buildSidebar(isDrawer: false),
+          if (isLargeScreen && _isSidebarVisible)
+            _buildSidebar(isDrawer: false),
+          if (isLargeScreen && _isSidebarVisible)
+            VerticalDivider(
+              thickness: 1,
+              width: 1,
+              color: Colors.grey.shade200,
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,15 +192,13 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
       floatingActionButton:
-          widget.selectedItem != NavigationItem.dashboard
+          widget.selectedItem != NavigationItem.dashboard && !isLargeScreen
               ? Container(
                 margin: const EdgeInsets.only(bottom: 24.0, right: 8.0),
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: const Color(
-                    0xFF1F2937,
-                  ), // Dark color matching app theme
+                  color: const Color(0xFF1F2937),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -247,7 +272,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ],
                 ),
               ),
-            const SizedBox(height: 24),
+            SizedBox(height: isDrawer ? 0 : 20),
             _buildNavItem(
               icon: CupertinoIcons.square_grid_2x2,
               label: 'Dashboard',
@@ -273,7 +298,7 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Consumer<PrdController>(
               builder: (context, prdController, _) {
                 final pinnedPrds = prdController.pinnedPrds;
@@ -325,7 +350,7 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Consumer<PrdController>(
               builder: (context, prdController, _) {
                 final recentPrds = prdController.recentPrds;
@@ -365,39 +390,6 @@ class _MainLayoutState extends State<MainLayout> {
               },
             ),
             const Spacer(),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    AppRouter.navigateToCreatePrd(context);
-                  },
-                  icon: const Icon(
-                    CupertinoIcons.add,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  label: const Text(
-                    'New PRD',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -414,28 +406,28 @@ class _MainLayoutState extends State<MainLayout> {
     final primaryColor = theme.primaryColor;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
         color: selected ? primaryColor.withOpacity(0.1) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Icon(
                   icon,
                   color: selected ? primaryColor : AppTheme.textSecondaryColor,
-                  size: 18,
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   label,
                   style: TextStyle(
                     color: selected ? primaryColor : AppTheme.textColor,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
                     fontSize: 14,
                   ),
                 ),
@@ -449,25 +441,25 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildPrdItem(String title, {required VoidCallback onTap}) {
     return Padding(
-      padding: const EdgeInsets.only(left: 42, right: 12, top: 4, bottom: 4),
+      padding: const EdgeInsets.only(left: 32, right: 16, top: 2, bottom: 2),
       child: InkWell(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Icon(
                 CupertinoIcons.doc_text,
-                size: 14,
-                color: AppTheme.textSecondaryColor.withOpacity(0.7),
+                size: 16,
+                color: AppTheme.textSecondaryColor.withOpacity(0.8),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     color: AppTheme.textSecondaryColor,
                     fontWeight: FontWeight.w500,
                   ),

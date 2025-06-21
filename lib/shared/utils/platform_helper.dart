@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:genprd/shared/responsive/responsive_layout.dart';
 
 class PlatformHelper {
   // Platform detection
@@ -27,14 +28,11 @@ class PlatformHelper {
   }
 
   static bool isTabletPlatform(BuildContext context) {
-    if (isMobile) return false; // Mobile platforms are never "tablet"
-    return MediaQuery.of(context).size.width >= 600 &&
-        MediaQuery.of(context).size.width < 1200;
+    return ResponsiveLayout.isTablet(context);
   }
 
   static bool isDesktopPlatform(BuildContext context) {
-    if (isMobile) return false; // Mobile platforms are never "desktop"
-    return MediaQuery.of(context).size.width >= 1200;
+    return ResponsiveLayout.isDesktop(context);
   }
 
   // Platform-specific responsive helpers
@@ -60,7 +58,7 @@ class PlatformHelper {
   }
 
   static EdgeInsets getScreenPadding(BuildContext context) {
-    if (isMobile) {
+    if (isMobilePlatform(context)) {
       return const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
     } else if (isWeb) {
       final width = MediaQuery.of(context).size.width;
@@ -77,13 +75,23 @@ class PlatformHelper {
 
   // Platform-specific grid configurations
   static int getGridCrossAxisCount(BuildContext context) {
-    if (isMobile) return 1;
+    if (isDesktopPlatform(context)) {
+      return 3;
+    } else if (isTabletPlatform(context)) {
+      return 2;
+    } else {
+      return 2;
+    }
+  }
 
-    final width = MediaQuery.of(context).size.width;
-    if (width < 600) return 1;
-    if (width < 900) return 2;
-    if (width < 1200) return 3;
-    return 4;
+  static double getChildAspectRatio(BuildContext context) {
+    if (isDesktopPlatform(context)) {
+      return 2.2;
+    } else if (isTabletPlatform(context)) {
+      return 1.8;
+    } else {
+      return 1.6;
+    }
   }
 
   // Platform-specific navigation patterns

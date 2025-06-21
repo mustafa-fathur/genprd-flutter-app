@@ -130,8 +130,7 @@ class _DashboardContentState extends State<DashboardContent> {
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             crossAxisCount: PlatformHelper.getGridCrossAxisCount(context),
-            childAspectRatio:
-                PlatformHelper.isMobilePlatform(context) ? 1.8 : 1.6,
+            childAspectRatio: PlatformHelper.getChildAspectRatio(context),
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
