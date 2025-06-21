@@ -10,6 +10,7 @@ import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/features/prd/models/prd_model.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 
 // Embedded widgets (previously in separate files)
 class PrdDetailHeader extends StatelessWidget {
@@ -28,8 +29,14 @@ class PrdDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenPadding = PlatformHelper.getScreenPadding(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.fromLTRB(
+        screenPadding.left,
+        12,
+        screenPadding.right,
+        12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -927,7 +934,9 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
           // Main content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: PlatformHelper.getScreenPadding(
+                context,
+              ).copyWith(top: 16, bottom: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

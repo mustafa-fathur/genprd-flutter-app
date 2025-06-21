@@ -121,22 +121,20 @@ class _PrdListContentState extends State<PrdListContent> {
             ),
             const SizedBox(height: 24),
 
-            // Show empty state if no PRDs
-            if (filteredPrds.isEmpty)
-              Expanded(
-                child: EmptyState(isNoData: prdController.allPrds.isEmpty),
-              ),
-
-            // PRD list
-            if (filteredPrds.isNotEmpty)
-              FilteredPrdList(
-                prds: filteredPrds,
-                onViewDetails: _navigateToPrdDetail,
-                onTogglePin: _togglePinStatus,
-                onArchive: _showArchiveConfirmationDialog,
-                onDelete: _showDeleteConfirmationDialog,
-                onRefresh: () => prdController.loadAllPrds(),
-              ),
+            // Show empty state or PRD list
+            Expanded(
+              child:
+                  filteredPrds.isEmpty
+                      ? EmptyState(isNoData: prdController.allPrds.isEmpty)
+                      : FilteredPrdList(
+                        prds: filteredPrds,
+                        onViewDetails: _navigateToPrdDetail,
+                        onTogglePin: _togglePinStatus,
+                        onArchive: _showArchiveConfirmationDialog,
+                        onDelete: _showDeleteConfirmationDialog,
+                        onRefresh: () => prdController.loadAllPrds(),
+                      ),
+            ),
 
             // Show loading indicator at the bottom during refresh
             if (prdController.status == PrdStatus.loading &&
@@ -568,27 +566,25 @@ class FilteredPrdList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: RefreshIndicator(
-        onRefresh: onRefresh,
-        color: AppTheme.primaryColor,
-        child: ListView.builder(
-          padding: const EdgeInsets.only(bottom: 80.0),
-          itemCount: prds.length,
-          itemBuilder: (context, index) {
-            final prd = prds[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: PrdListItem(
-                prd: prd,
-                onViewDetails: onViewDetails,
-                onTogglePin: onTogglePin,
-                onArchive: onArchive,
-                onDelete: onDelete,
-              ),
-            );
-          },
-        ),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppTheme.primaryColor,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        itemCount: prds.length,
+        itemBuilder: (context, index) {
+          final prd = prds[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: PrdListItem(
+              prd: prd,
+              onViewDetails: onViewDetails,
+              onTogglePin: onTogglePin,
+              onArchive: onArchive,
+              onDelete: onDelete,
+            ),
+          );
+        },
       ),
     );
   }
