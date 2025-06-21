@@ -15,6 +15,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MainLayout(
       title: 'Dashboard',
+      subtitle: 'Overview of your Product Requirements Documents',
       selectedItem: NavigationItem.dashboard,
       child: DashboardContent(),
     );
@@ -110,27 +111,16 @@ class _DashboardContentState extends State<DashboardContent> {
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Overview text
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Text(
-              'Overview of your Product Requirements Documents',
-              style: textTheme.bodyLarge?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-          ),
-
           // Stats display
           GridView.count(
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             crossAxisCount: PlatformHelper.getGridCrossAxisCount(context),
-            childAspectRatio: PlatformHelper.getChildAspectRatio(context),
+            childAspectRatio:
+                PlatformHelper.isDesktopPlatform(context) ? 2.0 : 1.8,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [

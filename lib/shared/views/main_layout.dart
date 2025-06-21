@@ -13,12 +13,14 @@ enum NavigationItem { dashboard, allPrds, pinnedPrds, recentPrds }
 class MainLayout extends StatefulWidget {
   final Widget child;
   final String title;
+  final String? subtitle;
   final NavigationItem selectedItem;
 
   const MainLayout({
     super.key,
     required this.child,
     required this.title,
+    this.subtitle,
     required this.selectedItem,
   });
 
@@ -173,20 +175,36 @@ class _MainLayoutState extends State<MainLayout> {
               color: Colors.grey.shade200,
             ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: screenPadding,
-                  child: Text(
-                    widget.title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            child: Padding(
+              padding: screenPadding.copyWith(top: 16, bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (widget.subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.subtitle!,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-                Expanded(child: widget.child),
-              ],
+                  const SizedBox(height: 16),
+                  Expanded(child: widget.child),
+                ],
+              ),
             ),
           ),
         ],
