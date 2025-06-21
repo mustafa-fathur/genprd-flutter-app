@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
 import 'package:lottie/lottie.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 
 class PrdFormScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -387,30 +388,33 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Form header with title and progress indicator
-              StepIndicator(
-                currentStep: _currentStep,
-                totalSteps: 4,
-                stepTitle: _stepTitle,
-                progressValue: _progressValue,
-              ),
+        child: Padding(
+          padding: PlatformHelper.getScreenPadding(context),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Form header with title and progress indicator
+                StepIndicator(
+                  currentStep: _currentStep,
+                  totalSteps: 4,
+                  stepTitle: _stepTitle,
+                  progressValue: _progressValue,
+                ),
 
-              // Form content - scrollable
-              Expanded(child: _buildStepContent()),
+                // Form content - scrollable
+                Expanded(child: _buildStepContent()),
 
-              // Navigation buttons
-              FormNavigationButtons(
-                onNext: _nextStep,
-                onPrevious: _currentStep > 0 ? _previousStep : null,
-                isLastStep: _currentStep == 3,
-                isFirstStep: _currentStep == 0,
-              ),
-            ],
+                // Navigation buttons
+                FormNavigationButtons(
+                  onNext: _nextStep,
+                  onPrevious: _currentStep > 0 ? _previousStep : null,
+                  isLastStep: _currentStep == 3,
+                  isFirstStep: _currentStep == 0,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -592,44 +596,41 @@ class StepIndicator extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Create New PRD',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Create New PRD',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Let AI help you create a comprehensive Product Requirements Document',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Let AI help you create a comprehensive Product Requirements Document',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
 
-              // Step indicator and progress
-              Row(
-                children: [
-                  Text(
-                    stepTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+            // Step indicator and progress
+            Row(
+              children: [
+                Text(
+                  stepTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
-                  const Spacer(),
-                  Text(
-                    'Step ${currentStep + 1} of $totalSteps',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+                ),
+                const Spacer(),
+                Text(
+                  'Step ${currentStep + 1} of $totalSteps',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
 
         // Progress bar
@@ -666,7 +667,7 @@ class FormNavigationButtons extends StatelessWidget {
     final primaryColor = theme.colorScheme.primary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -944,7 +945,7 @@ class TimelineStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1080,7 +1081,7 @@ class ProjectOverviewStep extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1229,7 +1230,7 @@ class ProjectInformationStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1434,7 +1435,7 @@ class DarciRolesStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

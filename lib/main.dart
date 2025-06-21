@@ -12,8 +12,12 @@ import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/services/deep_link_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() async {
+  // Use the path URL strategy for clean URLs on the web
+  usePathUrlStrategy();
+
   // Ensure Flutter is initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,27 +26,46 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseApi().initNotifications();
 
-  // Initialize deep link handler
+  // Create providers and handlers
+  final authProvider = AuthProvider();
   final deepLinkHandler = DeepLinkHandler();
-  await deepLinkHandler.initUniLinks();
+
+  // Initialize the handler with the provider
+  deepLinkHandler.init(authProvider);
+
+  // IMPORTANT: Process the initial link *before* running the app.
+  // This ensures the auth state is set correctly if the app is launched from a URL.
+  await deepLinkHandler.handleInitialLink();
+
+  // Now, initialize the auth state from storage. This is harmless if the
+  // deep link already authenticated the user.
+  await authProvider.initAuth();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => PrdController()),
       ],
-      child: MyApp(deepLinkHandler: deepLinkHandler),
+      child: MyApp(
+        deepLinkHandler: deepLinkHandler,
+        authProvider: authProvider,
+      ),
     ),
   );
 }
 
 class MyApp extends StatefulWidget {
   final DeepLinkHandler deepLinkHandler;
+  final AuthProvider authProvider;
 
-  const MyApp({super.key, required this.deepLinkHandler});
+  const MyApp({
+    super.key,
+    required this.deepLinkHandler,
+    required this.authProvider,
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -52,17 +75,8 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    // Initialize authentication state
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.initAuth();
-
-    // Handle deep links
-    widget.deepLinkHandler.handleIncomingLinks(context);
-    widget.deepLinkHandler.handleInitialLink(context);
+    // Now, only set up the listener for links that come in *while the app is running*.
+    widget.deepLinkHandler.handleIncomingLinks();
   }
 
   @override
@@ -87,7 +101,7 @@ class _MyAppState extends State<MyApp> {
       title: 'GenPRD',
       theme: theme,
       debugShowCheckedModeBanner: false,
-      routerConfig: AppRouter.router,
+      routerConfig: AppRouter.getRouter(widget.authProvider),
     );
   }
 }

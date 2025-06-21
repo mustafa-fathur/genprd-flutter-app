@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:genprd/features/auth/services/auth_service.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,20 +25,32 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLogin = true;
   String? _errorMessage;
 
+  late AuthProvider _authProvider;
+
   @override
   void initState() {
     super.initState();
-    // Check if already authenticated
+    _authProvider = Provider.of<AuthProvider>(context, listen: false);
+    _authProvider.addListener(_onAuthStateChanged);
+
+    // Check if already authenticated on initial load
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.isAuthenticated) {
+      if (_authProvider.isAuthenticated) {
         _navigateToDashboard();
       }
     });
   }
 
+  void _onAuthStateChanged() {
+    if (_authProvider.isAuthenticated) {
+      // To ensure we're not in the middle of a build
+      Future.microtask(() => _navigateToDashboard());
+    }
+  }
+
   @override
   void dispose() {
+    _authProvider.removeListener(_onAuthStateChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
@@ -55,37 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       debugPrint('Starting Google sign-in process...');
 
-      // First attempt: Try native sign in
-      try {
-        debugPrint('Attempting native Google Sign In...');
-        await authProvider.signInWithGoogleNative();
-
-        if (authProvider.isAuthenticated && mounted) {
-          await userProvider.getUserProfile();
-          debugPrint('Native sign in successful, navigating to dashboard');
-          _navigateToDashboard();
-          final fcmToken = await FirebaseMessaging.instance.getToken();
-          if (fcmToken != null) {
-            await AuthService().updateFcmToken(fcmToken);
-          }
-          return;
-        } else {
-          debugPrint('Native sign in did not result in authenticated state');
-        }
-      } catch (nativeError) {
-        debugPrint('Native sign in failed with error: $nativeError');
-
-        // Don't show error yet, we'll try web flow first
-        if (nativeError.toString().contains('PlatformException') ||
-            nativeError.toString().contains('ApiException: 10') ||
-            nativeError.toString().contains('MissingPluginException')) {
-          debugPrint('Detected known error in native flow, trying web flow...');
-        }
-      }
-
-      // Second attempt: Try web flow
-      try {
-        debugPrint('Falling back to web flow authentication...');
+      if (PlatformHelper.isWeb) {
+        debugPrint('Using web flow authentication...');
         await authProvider.signInWithGoogle();
         debugPrint('Web flow URL launched successfully');
 
@@ -98,21 +82,49 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         }
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await AuthService().updateFcmToken(fcmToken);
+      } else {
+        // On mobile, attempt native sign in, with a fallback to the web-view flow
+        try {
+          debugPrint('Attempting native Google Sign In...');
+          await authProvider.signInWithGoogleNative();
+
+          if (authProvider.isAuthenticated && mounted) {
+            await userProvider.getUserProfile();
+            debugPrint('Native sign in successful, navigating to dashboard');
+            final fcmToken = await FirebaseMessaging.instance.getToken();
+            if (fcmToken != null) {
+              await AuthService().updateFcmToken(fcmToken);
+            }
+            return; // Exit if native sign-in is successful
+          } else {
+            debugPrint('Native sign in did not result in authenticated state.');
+            // Don't fall back if user cancelled, but do on error.
+          }
+        } catch (nativeError) {
+          debugPrint(
+            'Native sign in failed with error, falling back to web flow: $nativeError',
+          );
+          // Second attempt: Try web flow (in a web view on mobile)
+          try {
+            await authProvider.signInWithGoogle();
+            debugPrint('Web flow URL launched successfully');
+          } catch (webError) {
+            debugPrint('Web flow sign in also failed: $webError');
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Sign in failed: $webError';
+              });
+            }
+          }
         }
-      } catch (webError) {
-        debugPrint('Web flow sign in also failed: $webError');
-        setState(() {
-          _errorMessage = 'Sign in failed: $webError';
-        });
       }
     } catch (e) {
       debugPrint('Unexpected error during sign in process: $e');
-      setState(() {
-        _errorMessage = 'Sign in error: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Sign in error: $e';
+        });
+      }
     }
   }
 
@@ -142,7 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (authProvider.isAuthenticated && mounted) {
         await userProvider.getUserProfile();
-        _navigateToDashboard();
         final fcmToken = await FirebaseMessaging.instance.getToken();
         if (fcmToken != null) {
           await AuthService().updateFcmToken(fcmToken);
@@ -196,275 +207,323 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
-    return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
-      body: Column(
+  Widget _buildLoginForm(AuthProvider authProvider) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Wave section with white logo background
-          ClipPath(
-            clipper: WaveClipperTwo(),
-            child: Container(
-              color: Colors.white,
-              width: double.infinity,
-              height: 340,
-              child: Center(
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+          Text(
+            _isLogin ? 'Welcome Back' : 'Create Account',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _isLogin
+                ? 'Sign in to continue'
+                : 'Create an account to get started',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+
+          // Display error if present
+          if (_errorMessage != null || authProvider.errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withAlpha(40),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red),
+                ),
+                child: Text(
+                  _errorMessage ?? authProvider.errorMessage ?? '',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
+
+          if (!_isLogin) ...[
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email';
+              }
+              if (!value.contains('@')) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
           ),
-          // Login content on light blue background
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.primary,
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _isLogin ? 'Welcome Back' : 'Create Account',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _isLogin
-                              ? 'Sign in to continue'
-                              : 'Create an account to get started',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _passwordController,
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            obscureText: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your password';
+              }
+              if (value.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
 
-                        // Display error if present
-                        if (_errorMessage != null ||
-                            authProvider.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 24.0),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withAlpha(40),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red),
+          if (authProvider.status == AuthStatus.authenticating)
+            const CircularProgressIndicator()
+          else
+            Column(
+              children: [
+                ElevatedButton(
+                  onPressed: _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    _isLogin ? 'Sign In' : 'Register',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'OR',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _signInWithGoogle,
+                  icon: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    radius: 16,
+                    child: Image.asset(
+                      'assets/images/google_logo.png',
+                      height: 20.0,
+                    ),
+                  ),
+                  label: Text(
+                    'Sign in with Google',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 24,
+                    ),
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isLogin = !_isLogin;
+                _errorMessage = null;
+              });
+            },
+            child: Text(
+              _isLogin
+                  ? 'Don\'t have an account? Register'
+                  : 'Already have an account? Sign In',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          if (_isLogin) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Forgot Password?',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Text(
+            'By signing in, you agree to our Terms of Service and Privacy Policy',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary.withAlpha(178),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isMobile = PlatformHelper.isMobilePlatform(context);
+
+    // The login form widget, which is now reusable
+    Widget loginForm = _buildLoginForm(authProvider);
+
+    return Scaffold(
+      backgroundColor: AppTheme.primaryColor,
+      body:
+          isMobile
+              // MOBILE LAYOUT
+              ? Column(
+                children: [
+                  ClipPath(
+                    clipper: WaveClipperTwo(),
+                    child: Container(
+                      color: Colors.white,
+                      width: double.infinity,
+                      height: 340,
+                      child: Center(
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 12,
+                                offset: Offset(0, 4),
                               ),
-                              child: Text(
-                                _errorMessage ??
-                                    authProvider.errorMessage ??
-                                    '',
-                                style: const TextStyle(color: Colors.red),
-                                textAlign: TextAlign.center,
-                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
-
-                        if (!_isLogin) ...[
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
                         ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            filled: true,
-                            fillColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      color: Theme.of(context).colorScheme.primary,
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0,
+                            vertical: 24.0,
                           ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
+                          child: loginForm,
                         ),
-                        const SizedBox(height: 24),
-
-                        if (authProvider.status == AuthStatus.authenticating)
-                          const CircularProgressIndicator()
-                        else
-                          Column(
+                      ),
+                    ),
+                  ),
+                ],
+              )
+              // WEB / DESKTOP / TABLET LAYOUT
+              : Row(
+                children: [
+                  // Optional left branding panel for very wide screens
+                  if (MediaQuery.of(context).size.width >= 1100)
+                    Expanded(
+                      child: Container(
+                        color: Colors.white,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              ElevatedButton(
-                                onPressed: _submitForm,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppTheme.primaryColor,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  minimumSize: const Size(double.infinity, 54),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  _isLogin ? 'Sign In' : 'Register',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
+                              Image.asset('assets/images/logo.png', width: 120),
+                              const SizedBox(height: 24),
                               const Text(
-                                'OR',
+                                'GenPRD',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 32,
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: _signInWithGoogle,
-                                icon: CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  radius: 16,
-                                  child: Image.asset(
-                                    'assets/images/google_logo.png',
-                                    height: 20.0,
-                                  ),
-                                ),
-                                label: Text(
-                                  'Sign in with Google',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppTheme.primaryColor,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                    horizontal: 24,
-                                  ),
-                                  minimumSize: const Size(double.infinity, 54),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 2,
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Product Requirements, Generated in Seconds.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: AppTheme.textSecondaryColor,
                                 ),
                               ),
                             ],
                           ),
-                        const SizedBox(height: 24),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _isLogin = !_isLogin;
-                              _errorMessage = null;
-                            });
-                          },
-                          child: Text(
-                            _isLogin
-                                ? 'Don\'t have an account? Register'
-                                : 'Already have an account? Sign In',
-                            style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+
+                  // Form panel
+                  Expanded(
+                    child: Container(
+                      color: AppTheme.primaryColor,
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 450),
+                              child: loginForm,
+                            ),
                           ),
                         ),
-                        if (_isLogin) ...[
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Forgot Password?',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
-                        const SizedBox(height: 24),
-                        Text(
-                          'By signing in, you agree to our Terms of Service and Privacy Policy',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary.withAlpha(178),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

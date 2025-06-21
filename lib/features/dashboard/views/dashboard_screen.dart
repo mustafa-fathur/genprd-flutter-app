@@ -3,6 +3,7 @@ import 'package:genprd/features/dashboard/controllers/dashboard_provider.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/views/main_layout.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,6 +15,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MainLayout(
       title: 'Dashboard',
+      subtitle: 'Overview of your Product Requirements Documents',
       selectedItem: NavigationItem.dashboard,
       child: DashboardContent(),
     );
@@ -109,27 +111,16 @@ class _DashboardContentState extends State<DashboardContent> {
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Overview text
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Text(
-              'Overview of your Product Requirements Documents',
-              style: textTheme.bodyLarge?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-          ),
-
           // Stats display
           GridView.count(
             physics: const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            crossAxisCount: 2,
-            childAspectRatio: 1.6,
+            crossAxisCount: PlatformHelper.getGridCrossAxisCount(context),
+            childAspectRatio:
+                PlatformHelper.isDesktopPlatform(context) ? 2.0 : 1.8,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [

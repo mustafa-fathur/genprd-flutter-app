@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
@@ -39,14 +40,45 @@ class _PrdListScreenState extends State<PrdListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
+    return const MainLayout(
       title: 'All PRDs',
+      subtitle: 'Manage and organize your Product Requirement Documents',
       selectedItem: NavigationItem.allPrds,
-      child: _buildPrdListContent(),
+      child: PrdListContent(),
     );
   }
+}
 
-  Widget _buildPrdListContent() {
+class PrdListContent extends StatefulWidget {
+  const PrdListContent({Key? key}) : super(key: key);
+
+  @override
+  _PrdListContentState createState() => _PrdListContentState();
+}
+
+class _PrdListContentState extends State<PrdListContent> {
+  String _searchQuery = '';
+  String _selectedFilter = 'All';
+  final List<String> _filters = [
+    'All',
+    'Draft',
+    'In Progress',
+    'Finished',
+    'Archived',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load PRDs when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final prdController = Provider.of<PrdController>(context, listen: false);
+      prdController.loadAllPrds();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer<PrdController>(
       builder: (context, prdController, child) {
         // Show loading state
@@ -87,24 +119,22 @@ class _PrdListScreenState extends State<PrdListScreen> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Show empty state if no PRDs
-            if (filteredPrds.isEmpty)
-              Expanded(
-                child: EmptyState(isNoData: prdController.allPrds.isEmpty),
-              ),
-
-            // PRD list
-            if (filteredPrds.isNotEmpty)
-              FilteredPrdList(
-                prds: filteredPrds,
-                onViewDetails: _navigateToPrdDetail,
-                onTogglePin: _togglePinStatus,
-                onArchive: _showArchiveConfirmationDialog,
-                onDelete: _showDeleteConfirmationDialog,
-                onRefresh: () => prdController.loadAllPrds(),
-              ),
+            // Show empty state or PRD list
+            Expanded(
+              child:
+                  filteredPrds.isEmpty
+                      ? EmptyState(isNoData: prdController.allPrds.isEmpty)
+                      : FilteredPrdList(
+                        prds: filteredPrds,
+                        onViewDetails: _navigateToPrdDetail,
+                        onTogglePin: _togglePinStatus,
+                        onArchive: _showArchiveConfirmationDialog,
+                        onDelete: _showDeleteConfirmationDialog,
+                        onRefresh: () => prdController.loadAllPrds(),
+                      ),
+            ),
 
             // Show loading indicator at the bottom during refresh
             if (prdController.status == PrdStatus.loading &&
@@ -260,56 +290,96 @@ class SearchFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          // Search field
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search PRDs...',
-                prefixIcon: const Icon(CupertinoIcons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+    return Column(
+      children: [
+        Row(
+          children: [
+            // Search field
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search PRDs...',
+                  prefixIcon: const Icon(CupertinoIcons.search, size: 20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  isDense: true,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                isDense: true,
-              ),
-              onChanged: onSearchChanged,
-              controller: TextEditingController(text: searchQuery),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Filter dropdown
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedFilter,
-                icon: const Icon(CupertinoIcons.line_horizontal_3_decrease),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                onChanged: onFilterChanged,
-                items:
-                    filters.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                onChanged: onSearchChanged,
               ),
             ),
+            if (!PlatformHelper.isMobilePlatform(context)) ...[
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () => AppRouter.navigateToCreatePrd(context),
+                icon: const Icon(CupertinoIcons.add, size: 16),
+                label: const Text('New PRD'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Filter Chips
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: filters.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final filter = filters[index];
+              final isSelected = selectedFilter == filter;
+              return ChoiceChip(
+                label: Text(filter),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    onFilterChanged(filter);
+                  }
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color:
+                        isSelected ? Colors.transparent : Colors.grey.shade300,
+                  ),
+                ),
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.textColor,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                backgroundColor: Colors.white,
+                selectedColor: Theme.of(context).primaryColor,
+                showCheckmark: false,
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -496,31 +566,25 @@ class FilteredPrdList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: RefreshIndicator(
-        onRefresh: onRefresh,
-        color: AppTheme.primaryColor,
-        child: ListView.separated(
-          padding: const EdgeInsets.only(
-            left: 16.0,
-            right: 16.0,
-            bottom: 80.0, // Add bottom padding to avoid FAB overlap
-          ),
-          itemCount: prds.length,
-          separatorBuilder:
-              (context, index) =>
-                  Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
-          itemBuilder: (context, index) {
-            final prd = prds[index];
-            return PrdListItem(
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: AppTheme.primaryColor,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        itemCount: prds.length,
+        itemBuilder: (context, index) {
+          final prd = prds[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: PrdListItem(
               prd: prd,
               onViewDetails: onViewDetails,
               onTogglePin: onTogglePin,
               onArchive: onArchive,
               onDelete: onDelete,
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -566,17 +630,17 @@ class PrdListItem extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200, width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 4,
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        margin: const EdgeInsets.symmetric(vertical: 6.0),
+        margin: const EdgeInsets.symmetric(vertical: 0),
         child: Stack(
           children: [
             // Main content
