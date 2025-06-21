@@ -25,23 +25,24 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLogin = true;
   String? _errorMessage;
 
+  late AuthProvider _authProvider;
+
   @override
   void initState() {
     super.initState();
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.addListener(_onAuthStateChanged);
+    _authProvider = Provider.of<AuthProvider>(context, listen: false);
+    _authProvider.addListener(_onAuthStateChanged);
 
     // Check if already authenticated on initial load
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (authProvider.isAuthenticated) {
+      if (_authProvider.isAuthenticated) {
         _navigateToDashboard();
       }
     });
   }
 
   void _onAuthStateChanged() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.isAuthenticated) {
+    if (_authProvider.isAuthenticated) {
       // To ensure we're not in the middle of a build
       Future.microtask(() => _navigateToDashboard());
     }
@@ -49,10 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).removeListener(_onAuthStateChanged);
+    _authProvider.removeListener(_onAuthStateChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
@@ -70,36 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       debugPrint('Starting Google sign-in process...');
 
-      // First attempt: Try native sign in
-      try {
-        debugPrint('Attempting native Google Sign In...');
-        await authProvider.signInWithGoogleNative();
-
-        if (authProvider.isAuthenticated && mounted) {
-          await userProvider.getUserProfile();
-          debugPrint('Native sign in successful, navigating to dashboard');
-          final fcmToken = await FirebaseMessaging.instance.getToken();
-          if (fcmToken != null) {
-            await AuthService().updateFcmToken(fcmToken);
-          }
-          return;
-        } else {
-          debugPrint('Native sign in did not result in authenticated state');
-        }
-      } catch (nativeError) {
-        debugPrint('Native sign in failed with error: $nativeError');
-
-        // Don't show error yet, we'll try web flow first
-        if (nativeError.toString().contains('PlatformException') ||
-            nativeError.toString().contains('ApiException: 10') ||
-            nativeError.toString().contains('MissingPluginException')) {
-          debugPrint('Detected known error in native flow, trying web flow...');
-        }
-      }
-
-      // Second attempt: Try web flow
-      try {
-        debugPrint('Falling back to web flow authentication...');
+      if (PlatformHelper.isWeb) {
+        debugPrint('Using web flow authentication...');
         await authProvider.signInWithGoogle();
         debugPrint('Web flow URL launched successfully');
 
@@ -112,21 +82,49 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         }
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await AuthService().updateFcmToken(fcmToken);
+      } else {
+        // On mobile, attempt native sign in, with a fallback to the web-view flow
+        try {
+          debugPrint('Attempting native Google Sign In...');
+          await authProvider.signInWithGoogleNative();
+
+          if (authProvider.isAuthenticated && mounted) {
+            await userProvider.getUserProfile();
+            debugPrint('Native sign in successful, navigating to dashboard');
+            final fcmToken = await FirebaseMessaging.instance.getToken();
+            if (fcmToken != null) {
+              await AuthService().updateFcmToken(fcmToken);
+            }
+            return; // Exit if native sign-in is successful
+          } else {
+            debugPrint('Native sign in did not result in authenticated state.');
+            // Don't fall back if user cancelled, but do on error.
+          }
+        } catch (nativeError) {
+          debugPrint(
+            'Native sign in failed with error, falling back to web flow: $nativeError',
+          );
+          // Second attempt: Try web flow (in a web view on mobile)
+          try {
+            await authProvider.signInWithGoogle();
+            debugPrint('Web flow URL launched successfully');
+          } catch (webError) {
+            debugPrint('Web flow sign in also failed: $webError');
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Sign in failed: $webError';
+              });
+            }
+          }
         }
-      } catch (webError) {
-        debugPrint('Web flow sign in also failed: $webError');
-        setState(() {
-          _errorMessage = 'Sign in failed: $webError';
-        });
       }
     } catch (e) {
       debugPrint('Unexpected error during sign in process: $e');
-      setState(() {
-        _errorMessage = 'Sign in error: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Sign in error: $e';
+        });
+      }
     }
   }
 

@@ -4,13 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConfig {
   // Base URLs for different environments
   static String get _devBaseUrl =>
-      dotenv.env['DEV_API_URL'] ?? 'http://10.0.2.2:3000/api';
+      dotenv.env['DEV_API_URL'] ?? 'http://localhost:3000/api';
   static String get _prodBaseUrl =>
       dotenv.env['PROD_API_URL'] ??
       'https://express-backend-418864732285.asia-southeast2.run.app/api';
 
   // Set this to true to use the deployed backend
-  static const bool _useProduction = true;
+  static const bool _useProduction = false;
 
   // The active base URL determined by environment
   static String get baseUrl => _useProduction ? _prodBaseUrl : _devBaseUrl;

@@ -12,9 +12,10 @@ import 'package:genprd/shared/utils/platform_helper.dart';
 
 class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    // clientId tidak bekerja di Android, gunakan serverClientId
-    serverClientId: dotenv.env['GOOGLE_CLIENT_ID'],
+    scopes: const ['email', 'profile'],
+    // On web, clientId is used. On mobile, serverClientId is used for offline access.
+    clientId: kIsWeb ? dotenv.env['GOOGLE_CLIENT_ID'] : null,
+    serverClientId: !kIsWeb ? dotenv.env['GOOGLE_CLIENT_ID'] : null,
   ); // Sign in with Google OAuth URL Launcher
   Future<void> signInWithGoogle() async {
     try {
@@ -33,69 +34,16 @@ class AuthService {
       );
       debugPrint('Expected app callback URL: ${ApiConfig.callbackUrl}');
 
-      // Log diagnostic info about URL launching
       await _logUrlLaunchDetails(uri);
 
-      // First attempt with inAppWebView (keeps the user in the app)
-      try {
-        if (await canLaunchUrl(uri)) {
-          final launched = await launchUrl(
-            uri,
-            mode: LaunchMode.inAppWebView,
-            webOnlyWindowName: '_self',
-            webViewConfiguration: const WebViewConfiguration(
-              enableJavaScript: true,
-              enableDomStorage: true,
-            ),
-          );
-
-          if (launched) {
-            debugPrint('URL launched successfully with inAppWebView mode');
-            return;
-          }
-        }
-      } catch (e) {
-        debugPrint('Error launching with inAppWebView: $e');
-      }
-
-      // Second attempt with externalApplication (opens in system browser)
-      try {
-        if (await canLaunchUrl(uri)) {
-          final launched = await launchUrl(
-            uri,
-            mode: LaunchMode.externalApplication,
-            webOnlyWindowName: '_self',
-          );
-
-          if (launched) {
-            debugPrint(
-              'URL launched successfully with externalApplication mode',
-            );
-            return;
-          }
-        }
-      } catch (e) {
-        debugPrint('Error launching with externalApplication: $e');
-      }
-
-      // Last resort: platformDefault
       if (await canLaunchUrl(uri)) {
-        final launched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
-
-        if (!launched) {
-          throw Exception(
-            'All URL launch attempts failed for: $googleAuthInitiationUrl',
-          );
+        final launched = await launchUrl(uri, webOnlyWindowName: '_self');
+        if (launched) {
+          debugPrint('URL launched successfully.');
+          return;
         }
-      } else {
-        // If the URL can't be launched, try a direct API call
-        debugPrint('Cannot launch URL, attempting direct API call');
-        await _tryDirectNativeSignIn();
       }
+      throw Exception('Could not launch $googleAuthInitiationUrl');
     } catch (e) {
       debugPrint('Error launching Google Auth: $e');
       rethrow;

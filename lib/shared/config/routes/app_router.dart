@@ -10,6 +10,8 @@ import 'package:genprd/features/user/views/user_profile_screen.dart';
 import 'package:genprd/shared/views/session_expired_screen.dart';
 import 'package:genprd/shared/views/splash_screen.dart';
 import 'package:genprd/shared/views/onboarding_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:genprd/features/auth/controllers/auth_provider.dart';
 
 class AppRouter {
   // Route paths
@@ -42,156 +44,196 @@ class AppRouter {
   static Widget buildPrdDetailScreen(String prdId) =>
       PrdDetailScreen(prdId: prdId);
 
-  static GoRouter get router => _router;
-
-  // Private router instance
-  static final _router = GoRouter(
-    initialLocation: root,
-    debugLogDiagnostics: true,
-    routes: [
-      // Root route redirects to splash
-      GoRoute(
-        path: root,
-        redirect: (_, __) {
-          debugPrint('Redirecting from root to splash screen');
-          return splash;
-        },
-      ),
-      GoRoute(
-        path: splash,
-        name: 'splash',
-        builder: (context, state) {
-          debugPrint('Building splash screen');
-          return buildSplashScreen();
-        },
-      ),
-      GoRoute(
-        path: login,
-        name: 'login',
-        builder: (context, state) {
-          debugPrint('Building login screen');
-          return buildLoginScreen();
-        },
-      ),
-      GoRoute(
-        path: authCallback,
-        name: 'authCallback',
-        builder: (context, state) {
-          debugPrint('Building auth callback screen');
-          return buildAuthCallbackScreen();
-        },
-      ),
-      GoRoute(
-        path: onboarding,
-        name: 'onboarding',
-        builder: (context, state) {
-          debugPrint('Building onboarding screen');
-          return buildOnboardingScreen();
-        },
-      ),
-      GoRoute(
-        path: dashboard,
-        name: 'dashboard',
-        builder: (context, state) {
-          debugPrint('Building dashboard screen');
-          return buildDashboardScreen();
-        },
-      ),
-      GoRoute(
-        path: allPrds,
-        name: 'allPrds',
-        builder: (context, state) {
-          debugPrint('Building all PRDs screen');
-          return buildAllPrdsScreen();
-        },
-      ),
-      GoRoute(
-        path: pinnedPrds,
-        name: 'pinnedPrds',
-        builder: (context, state) {
-          debugPrint('Building pinned PRDs screen');
-          return buildPinnedPrdsScreen();
-        },
-      ),
-      GoRoute(
-        path: recentPrds,
-        name: 'recentPrds',
-        builder: (context, state) {
-          debugPrint('Building recent PRDs screen');
-          return buildRecentPrdsScreen();
-        },
-      ),
-      GoRoute(
-        path: createPrd,
-        name: 'createPrd',
-        builder: (context, state) {
-          debugPrint('Building create PRD screen');
-          return buildCreatePrdScreen();
-        },
-      ),
-      GoRoute(
-        path: userProfile,
-        name: 'userProfile',
-        builder: (context, state) {
-          debugPrint('Building user profile screen');
-          return buildUserProfileScreen();
-        },
-      ),
-      GoRoute(
-        path: sessionExpired,
-        name: 'sessionExpired',
-        builder: (context, state) {
-          debugPrint('Building session expired screen');
-          return buildSessionExpiredScreen();
-        },
-      ),
-      GoRoute(
-        path: '/prds/:id',
-        name: 'prdDetail',
-        builder: (context, state) {
-          final prdId = state.pathParameters['id'] ?? '1';
-          debugPrint('Building PRD detail screen for ID: $prdId');
-          return buildPrdDetailScreen(prdId);
-        },
-      ),
-    ],
-    errorBuilder: (context, state) {
-      debugPrint('Navigation error: ${state.error}');
-      debugPrint('Attempted path: ${state.uri.path}');
-
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Navigation Error'),
-          backgroundColor: Colors.white,
+  static GoRouter getRouter(AuthProvider authProvider) {
+    return GoRouter(
+      initialLocation: root,
+      debugLogDiagnostics: true,
+      routes: [
+        // Root route redirects to splash
+        GoRoute(
+          path: root,
+          redirect: (_, __) {
+            debugPrint('Redirecting from root to splash screen');
+            return splash;
+          },
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Route not found: ${state.uri.path}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => context.go(login),
-                child: const Text('Go to Login'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () => context.go(dashboard),
-                child: const Text('Go to Dashboard'),
-              ),
-            ],
+        GoRoute(
+          path: splash,
+          name: 'splash',
+          builder: (context, state) {
+            debugPrint('Building splash screen');
+            return buildSplashScreen();
+          },
+        ),
+        GoRoute(
+          path: login,
+          name: 'login',
+          builder: (context, state) {
+            debugPrint('Building login screen');
+            return buildLoginScreen();
+          },
+        ),
+        GoRoute(
+          path: authCallback,
+          name: 'authCallback',
+          builder: (context, state) {
+            debugPrint('Building auth callback screen');
+            return buildAuthCallbackScreen();
+          },
+        ),
+        GoRoute(
+          path: onboarding,
+          name: 'onboarding',
+          builder: (context, state) {
+            debugPrint('Building onboarding screen');
+            return buildOnboardingScreen();
+          },
+        ),
+        GoRoute(
+          path: dashboard,
+          name: 'dashboard',
+          builder: (context, state) {
+            debugPrint('Building dashboard screen');
+            return buildDashboardScreen();
+          },
+        ),
+        GoRoute(
+          path: allPrds,
+          name: 'allPrds',
+          builder: (context, state) {
+            debugPrint('Building all PRDs screen');
+            return buildAllPrdsScreen();
+          },
+        ),
+        GoRoute(
+          path: pinnedPrds,
+          name: 'pinnedPrds',
+          builder: (context, state) {
+            debugPrint('Building pinned PRDs screen');
+            return buildPinnedPrdsScreen();
+          },
+        ),
+        GoRoute(
+          path: recentPrds,
+          name: 'recentPrds',
+          builder: (context, state) {
+            debugPrint('Building recent PRDs screen');
+            return buildRecentPrdsScreen();
+          },
+        ),
+        GoRoute(
+          path: createPrd,
+          name: 'createPrd',
+          builder: (context, state) {
+            debugPrint('Building create PRD screen');
+            return buildCreatePrdScreen();
+          },
+        ),
+        GoRoute(
+          path: userProfile,
+          name: 'userProfile',
+          builder: (context, state) {
+            debugPrint('Building user profile screen');
+            return buildUserProfileScreen();
+          },
+        ),
+        GoRoute(
+          path: sessionExpired,
+          name: 'sessionExpired',
+          builder: (context, state) {
+            debugPrint('Building session expired screen');
+            return buildSessionExpiredScreen();
+          },
+        ),
+        GoRoute(
+          path: '/prds/:id',
+          name: 'prdDetail',
+          builder: (context, state) {
+            final prdId = state.pathParameters['id'] ?? '1';
+            debugPrint('Building PRD detail screen for ID: $prdId');
+            return buildPrdDetailScreen(prdId);
+          },
+        ),
+      ],
+      errorBuilder: (context, state) {
+        debugPrint('Navigation error: ${state.error}');
+        debugPrint('Attempted path: ${state.uri.path}');
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Navigation Error'),
+            backgroundColor: Colors.white,
           ),
-        ),
-      );
-    },
-    redirect: (BuildContext context, GoRouterState state) {
-      debugPrint('Navigation request to: ${state.uri.path}');
-      return null; // No redirect needed
-    },
-  );
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Route not found: ${state.uri.path}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => context.go(login),
+                  child: const Text('Go to Login'),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () => context.go(dashboard),
+                  child: const Text('Go to Dashboard'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      redirect: (BuildContext context, GoRouterState state) {
+        final location = state.uri.path;
+
+        debugPrint(
+          'Router redirect check: location=$location, authStatus=${authProvider.status}',
+        );
+
+        final isAuthenticated = authProvider.status == AuthStatus.authenticated;
+        final isAuthenticating =
+            authProvider.status == AuthStatus.authenticating;
+
+        const guestRoutes = [
+          AppRouter.login,
+          AppRouter.splash,
+          AppRouter.onboarding,
+        ];
+        final isGuestRoute = guestRoutes.contains(location);
+
+        // If auth state is still initializing, show a splash screen
+        if (authProvider.status == AuthStatus.initial && location != splash) {
+          return splash;
+        }
+
+        // If the user is authenticated and tries to access a guest route, redirect to dashboard
+        if (isAuthenticated && isGuestRoute) {
+          debugPrint(
+            'Redirecting authenticated user from guest route to dashboard',
+          );
+          return AppRouter.dashboard;
+        }
+
+        // If the user is not authenticated and tries to access a protected route, redirect to login
+        if (!isAuthenticated &&
+            !isGuestRoute &&
+            location != AppRouter.authCallback) {
+          debugPrint(
+            'Redirecting unauthenticated user to login from: $location',
+          );
+          return AppRouter.login;
+        }
+
+        debugPrint('Allowing navigation to: $location');
+        return null; // No redirection needed
+      },
+      refreshListenable: authProvider,
+    );
+  }
 
   // Navigation helper methods
   static void navigateToDashboard(BuildContext context) {

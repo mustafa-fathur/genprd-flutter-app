@@ -24,12 +24,17 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
   Future<void> _processCallback() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // Using GoRouterState.of(context) might be problematic if context is not ready.
-    // A more robust way is to get the current route information differently if issues arise.
-    // However, for this case, it should be fine within addPostFrameCallback.
+    // If the user is already authenticated, just go to the dashboard.
+    // This can happen if the deep link was processed before the screen was built.
+    if (authProvider.isAuthenticated) {
+      if (mounted) context.go(AppRouter.dashboard);
+      return;
+    }
+
     final queryParams = GoRouterState.of(context).uri.queryParameters;
 
-    if (queryParams.isNotEmpty) {
+    // Check for the token specifically to ensure we have auth data
+    if (queryParams.containsKey('token')) {
       final success = await authProvider.processAuthCallback(queryParams);
       if (mounted) {
         if (success) {
@@ -46,7 +51,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
       }
     } else {
       if (mounted) {
-        // No params, something went wrong, redirect to login
+        // No token, something went wrong, redirect to login
         context.go(AppRouter.login);
       }
     }
