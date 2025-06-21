@@ -1,18 +1,20 @@
+import 'dart:io' show Platform;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:genprd/firebase_options.dart';
-import 'package:genprd/shared/services/firebase_api.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
-import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/features/dashboard/controllers/dashboard_provider.dart';
 import 'package:genprd/features/prd/controllers/prd_controller.dart';
+import 'package:genprd/features/user/controllers/user_provider.dart';
+import 'package:genprd/firebase_options.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:genprd/shared/services/deep_link_handler.dart';
+import 'package:genprd/shared/services/firebase_api.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   // Use the path URL strategy for clean URLs on the web
@@ -23,8 +25,13 @@ void main() async {
 
   await dotenv.load();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseApi().initNotifications();
+  // Skip Firebase initialization on iOS
+  bool useFirebase = !Platform.isIOS;
+  
+  if (useFirebase) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await FirebaseApi().initNotifications();
+  }
 
   // Create providers and handlers
   final authProvider = AuthProvider();
@@ -52,6 +59,7 @@ void main() async {
       child: MyApp(
         deepLinkHandler: deepLinkHandler,
         authProvider: authProvider,
+        useFirebase: useFirebase,
       ),
     ),
   );
@@ -60,11 +68,13 @@ void main() async {
 class MyApp extends StatefulWidget {
   final DeepLinkHandler deepLinkHandler;
   final AuthProvider authProvider;
+  final bool useFirebase;
 
   const MyApp({
     super.key,
     required this.deepLinkHandler,
     required this.authProvider,
+    required this.useFirebase,
   });
 
   @override
