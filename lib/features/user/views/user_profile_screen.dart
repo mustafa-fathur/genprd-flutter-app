@@ -7,6 +7,7 @@ import 'package:genprd/shared/config/routes/app_router.dart';
 import 'package:genprd/shared/services/token_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:genprd/shared/utils/platform_helper.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -85,7 +86,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           final user = userProvider.user;
 
-          return SingleChildScrollView(
+          final profileContent = SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -247,6 +248,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ],
             ),
           );
+
+          if (PlatformHelper.isDesktopPlatform(context) ||
+              PlatformHelper.isTabletPlatform(context)) {
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: profileContent,
+              ),
+            );
+          } else {
+            return profileContent;
+          }
         },
       ),
     );
