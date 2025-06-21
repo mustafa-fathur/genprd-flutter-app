@@ -1,6 +1,5 @@
-import 'dart:io' show Platform;
-
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -25,11 +24,13 @@ void main() async {
 
   await dotenv.load();
 
-  // Skip Firebase initialization on iOS
-  bool useFirebase = !Platform.isIOS;
-  
+  // Skip Firebase initialization on iOS and web
+  bool useFirebase = !kIsWeb;
+
   if (useFirebase) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await FirebaseApi().initNotifications();
   }
 

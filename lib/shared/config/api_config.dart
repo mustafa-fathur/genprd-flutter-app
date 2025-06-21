@@ -10,7 +10,7 @@ class ApiConfig {
       'https://express-backend-418864732285.asia-southeast2.run.app/api';
 
   // Set this to true to use the deployed backend
-  static const bool _useProduction = true;
+  static const bool _useProduction = false;
 
   // The active base URL determined by environment
   static String get baseUrl => _useProduction ? _prodBaseUrl : _devBaseUrl;

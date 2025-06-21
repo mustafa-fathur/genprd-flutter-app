@@ -1,24 +1,30 @@
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:genprd/shared/responsive/responsive_layout.dart';
+
+// Conditional import for platform detection
+import 'platform_helper_io.dart'
+    if (dart.library.html) 'platform_helper_web.dart';
 
 class PlatformHelper {
   // Platform detection
   static bool get isWeb => kIsWeb;
-  static bool get isAndroid => !kIsWeb && Platform.isAndroid;
-  static bool get isIOS => !kIsWeb && Platform.isIOS;
+  static bool get isAndroid => !kIsWeb && PlatformDetector.isAndroid;
+  static bool get isIOS => !kIsWeb && PlatformDetector.isIOS;
   static bool get isMobile => isAndroid || isIOS;
   static bool get isDesktop =>
-      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+      !kIsWeb &&
+      (PlatformDetector.isWindows ||
+          PlatformDetector.isMacOS ||
+          PlatformDetector.isLinux);
 
   static String get platformName {
     if (isWeb) return 'Web';
     if (isAndroid) return 'Android';
     if (isIOS) return 'iOS';
-    if (Platform.isWindows) return 'Windows';
-    if (Platform.isMacOS) return 'macOS';
-    if (Platform.isLinux) return 'Linux';
+    if (PlatformDetector.isWindows) return 'Windows';
+    if (PlatformDetector.isMacOS) return 'macOS';
+    if (PlatformDetector.isLinux) return 'Linux';
     return 'Unknown';
   }
 

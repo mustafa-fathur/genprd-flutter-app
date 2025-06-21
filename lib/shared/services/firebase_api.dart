@@ -1,5 +1,5 @@
 import 'dart:developer';
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -9,11 +9,15 @@ class FirebaseApi {
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
   Future<void> initNotifications() async {
-    // Skip on iOS
-    if (Platform.isIOS) {
-      log('📱 Skipping Firebase Messaging initialization on iOS');
+    // Skip on iOS and web
+    if (kIsWeb) {
+      log('🌐 Skipping Firebase Messaging initialization on web');
       return;
     }
+
+    // For mobile platforms, we'll need to check iOS differently
+    // Since we can't use Platform.isIOS on web, we'll skip this for now
+    // and handle iOS detection in a platform-specific way if needed
 
     await _firebaseMessaging.requestPermission();
     final fcmToken = await _firebaseMessaging.getToken();
@@ -24,7 +28,9 @@ class FirebaseApi {
   }
 
   Future<void> _initLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const initSettings = InitializationSettings(android: androidSettings);
     await _localNotifications.initialize(initSettings);
   }
@@ -53,7 +59,9 @@ class FirebaseApi {
   void _initPushNotificationHandlers() {
     // Foreground
     FirebaseMessaging.onMessage.listen((message) {
-      log('📩 Foreground Notification Received: ${message.notification?.title}');
+      log(
+        '📩 Foreground Notification Received: ${message.notification?.title}',
+      );
       _showLocalNotification(message);
     });
 
