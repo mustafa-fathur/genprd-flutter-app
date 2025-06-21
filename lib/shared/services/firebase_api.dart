@@ -1,4 +1,6 @@
 import 'dart:developer';
+import 'dart:io' show Platform;
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -7,6 +9,12 @@ class FirebaseApi {
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
   Future<void> initNotifications() async {
+    // Skip on iOS
+    if (Platform.isIOS) {
+      log('📱 Skipping Firebase Messaging initialization on iOS');
+      return;
+    }
+
     await _firebaseMessaging.requestPermission();
     final fcmToken = await _firebaseMessaging.getToken();
     log('📦 FCM Token: $fcmToken');
