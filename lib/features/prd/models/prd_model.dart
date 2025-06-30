@@ -9,6 +9,7 @@ class PrdModel {
   final String projectOverview;
   final String? startDate;
   final String? endDate;
+  final DateTime? deadline;
   final List<String> documentOwners;
   final List<String> developers;
   final List<String> stakeholders;
@@ -27,6 +28,7 @@ class PrdModel {
     required this.projectOverview,
     this.startDate,
     this.endDate,
+    this.deadline,
     required this.documentOwners,
     required this.developers,
     required this.stakeholders,
@@ -47,6 +49,8 @@ class PrdModel {
       projectOverview: json['project_overview'] ?? '',
       startDate: json['start_date'],
       endDate: json['end_date'],
+      deadline:
+          json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
       documentOwners: _parseList(json['document_owners']),
       developers: _parseList(json['developers']),
       stakeholders: _parseList(json['stakeholders']),

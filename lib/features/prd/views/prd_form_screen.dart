@@ -26,6 +26,8 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
 
   DateTime? _startDate;
   DateTime? _endDate;
+  DateTime? _deadline;
+  bool _hasReminder = false;
   bool _isGenerating = false;
   int _currentStep = 0;
   double _progressValue = 0.25; // 25% for first step
@@ -70,6 +72,12 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
     if (widget.initialData!['end_date'] != null) {
       _endDate = DateTime.parse(widget.initialData!['end_date']);
     }
+
+    // Load deadline and reminder settings
+    if (widget.initialData!['deadline'] != null) {
+      _deadline = DateTime.parse(widget.initialData!['deadline']);
+    }
+    _hasReminder = widget.initialData!['has_reminder'] == true;
 
     // Load personnel selections if available
     _documentOwners = List<String>.from(
@@ -159,6 +167,38 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         } else {
           _endDate = pickedDate;
         }
+      });
+    }
+  }
+
+  // Select deadline date only (no time)
+  Future<void> _selectDeadline(BuildContext context) async {
+    final initialDate =
+        _deadline ?? DateTime.now().add(const Duration(days: 7));
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _deadline = DateTime(pickedDate.year, pickedDate.month, pickedDate.day);
       });
     }
   }
@@ -298,6 +338,11 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
               _endDate != null
                   ? DateFormat('yyyy-MM-dd').format(_endDate!)
                   : null,
+          'deadline':
+              _deadline != null
+                  ? DateFormat('yyyy-MM-dd').format(_deadline!)
+                  : null,
+          'has_reminder': _hasReminder,
           'document_owners': _documentOwners,
           'developers': _developers,
           'stakeholders': _stakeholders,
@@ -431,6 +476,8 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           documentOwners: _documentOwners,
           developers: _developers,
           stakeholders: _stakeholders,
+          deadline: _deadline,
+          hasReminder: _hasReminder,
           updateDocumentOwners: (selected) {
             setState(() => _documentOwners = selected);
           },
@@ -439,6 +486,10 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           },
           updateStakeholders: (selected) {
             setState(() => _stakeholders = selected);
+          },
+          onDeadlineChanged: () => _selectDeadline(context),
+          onReminderChanged: (value) {
+            setState(() => _hasReminder = value);
           },
           showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
         );
@@ -483,6 +534,8 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           documentOwners: _documentOwners,
           developers: _developers,
           stakeholders: _stakeholders,
+          deadline: _deadline,
+          hasReminder: _hasReminder,
           updateDocumentOwners: (selected) {
             setState(() => _documentOwners = selected);
           },
@@ -491,6 +544,10 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
           },
           updateStakeholders: (selected) {
             setState(() => _stakeholders = selected);
+          },
+          onDeadlineChanged: () => _selectDeadline(context),
+          onReminderChanged: (value) {
+            setState(() => _hasReminder = value);
           },
           showPersonnelSelectionDialog: _showPersonnelSelectionForDarci,
         );
@@ -1208,9 +1265,13 @@ class ProjectInformationStep extends StatelessWidget {
   final List<String> documentOwners;
   final List<String> developers;
   final List<String> stakeholders;
+  final DateTime? deadline;
+  final bool hasReminder;
   final Function(List<String>) updateDocumentOwners;
   final Function(List<String>) updateDevelopers;
   final Function(List<String>) updateStakeholders;
+  final VoidCallback onDeadlineChanged;
+  final ValueChanged<bool> onReminderChanged;
   final Function(String, List<String>, Function(List<String>))
   showPersonnelSelectionDialog;
 
@@ -1221,9 +1282,13 @@ class ProjectInformationStep extends StatelessWidget {
     required this.documentOwners,
     required this.developers,
     required this.stakeholders,
+    required this.deadline,
+    required this.hasReminder,
     required this.updateDocumentOwners,
     required this.updateDevelopers,
     required this.updateStakeholders,
+    required this.onDeadlineChanged,
+    required this.onReminderChanged,
     required this.showPersonnelSelectionDialog,
   });
 
@@ -1268,6 +1333,10 @@ class ProjectInformationStep extends StatelessWidget {
             },
             icon: CupertinoIcons.tag,
           ),
+          const SizedBox(height: 20),
+
+          // Deadline section
+          _buildDeadlineSection(context),
           const SizedBox(height: 20),
 
           // Document Owners
@@ -1355,6 +1424,121 @@ class ProjectInformationStep extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDeadlineSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Deadline',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        _buildDateField(
+          context: context,
+          label: 'Deadline',
+          value:
+              deadline != null
+                  ? DateFormat('MM/dd/yyyy').format(deadline!)
+                  : 'Select deadline',
+          onTap: () => onDeadlineChanged(),
+        ),
+        const SizedBox(height: 12),
+        // Reminder toggle
+        Row(
+          children: [
+            Switch(
+              value: hasReminder,
+              onChanged: onReminderChanged,
+              activeColor: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Set reminder for deadline',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+            ),
+          ],
+        ),
+        if (hasReminder) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.bell,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'You will receive notifications 1 day before and at the deadline',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDateField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, color: primaryColor, size: 18),
+            const SizedBox(width: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                color:
+                    value == 'Select deadline'
+                        ? Colors.grey.shade500
+                        : theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -783,6 +783,7 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
           'is_pinned': data.isPinned,
           'created_at': data.createdAt.toIso8601String(),
           'updated_at': data.updatedAt.toIso8601String(),
+          'deadline': data.deadline?.toIso8601String(),
         };
         _isLoading = false;
       });
@@ -960,6 +961,11 @@ class _PrdDetailScreenState extends State<PrdDetailScreen> {
                               label: 'Created Date:',
                               value: _formatDate(_prdData!['created_at']),
                             ),
+                            if (_prdData!['deadline'] != null)
+                              InfoRow(
+                                label: 'Deadline:',
+                                value: _formatDate(_prdData!['deadline']),
+                              ),
                             if (_prdData!['start_date'] != null)
                               InfoRow(
                                 label: 'Start Date:',

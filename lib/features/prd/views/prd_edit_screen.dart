@@ -1647,6 +1647,8 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
   late TextEditingController _consultedGuidelinesController;
   late TextEditingController _informedGuidelinesController;
 
+  late DateTime? _deadline;
+
   @override
   void initState() {
     super.initState();
@@ -1775,6 +1777,12 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
     _informedGuidelinesController = TextEditingController(
       text: _informedGuidelines,
     );
+
+    _deadline =
+        widget.prdData['deadline'] != null &&
+                widget.prdData['deadline'].toString().isNotEmpty
+            ? DateTime.tryParse(widget.prdData['deadline'].toString())
+            : null;
   }
 
   @override
@@ -1974,6 +1982,10 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
         'project_overview': _overviewController.text,
         'start_date': _startDate.toIso8601String().split('T')[0],
         'end_date': _endDate.toIso8601String().split('T')[0],
+        'deadline':
+            _deadline != null
+                ? _deadline!.toIso8601String().split('T')[0]
+                : null,
         'stakeholders': _stakeholders,
         'developers': _developers,
         'darci_roles': darciRoles,
@@ -2043,6 +2055,36 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
         } else {
           _endDate = pickedDate;
         }
+        _isDirty = true;
+      });
+    }
+  }
+
+  Future<void> _selectDeadline(BuildContext context) async {
+    final initialDate =
+        _deadline ?? DateTime.now().add(const Duration(days: 7));
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _deadline = DateTime(pickedDate.year, pickedDate.month, pickedDate.day);
         _isDirty = true;
       });
     }
@@ -2265,86 +2307,162 @@ class _PrdEditScreenState extends State<PrdEditScreen> {
                                   hintText: 'Add developer',
                                 ),
                                 const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: () => _selectDate(context, true),
-                                        child: InputDecorator(
-                                          decoration: InputDecoration(
-                                            labelText: 'Start Date',
-                                            filled: true,
-                                            fillColor: Colors.grey.shade50,
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: Colors.grey.shade200,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.calendar_today,
-                                                size: 18,
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                DateFormat(
-                                                  'MM/dd/yyyy',
-                                                ).format(_startDate),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap:
-                                            () => _selectDate(context, false),
-                                        child: InputDecorator(
-                                          decoration: InputDecoration(
-                                            labelText: 'End Date',
-                                            filled: true,
-                                            fillColor: Colors.grey.shade50,
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: Colors.grey.shade200,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.calendar_today,
-                                                size: 18,
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                DateFormat(
-                                                  'MM/dd/yyyy',
-                                                ).format(_endDate),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                // Dates section label
+                                Text(
+                                  'Project Dates',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
                                 ),
+                                const SizedBox(height: 8),
+                                // Start Date
+                                InkWell(
+                                  onTap: () => _selectDate(context, true),
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: 'Start Date',
+                                      filled: true,
+                                      fillColor: Colors.grey.shade50,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 18,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat(
+                                            'MM/dd/yyyy',
+                                          ).format(_startDate),
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                // End Date
+                                InkWell(
+                                  onTap: () => _selectDate(context, false),
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: 'End Date',
+                                      filled: true,
+                                      fillColor: Colors.grey.shade50,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 18,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat(
+                                            'MM/dd/yyyy',
+                                          ).format(_endDate),
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                // Deadline
+                                InkWell(
+                                  onTap: () => _selectDeadline(context),
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: 'Deadline',
+                                      filled: true,
+                                      fillColor: Colors.grey.shade50,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                      suffixIcon:
+                                          _deadline != null
+                                              ? IconButton(
+                                                icon: const Icon(
+                                                  Icons.clear,
+                                                  size: 18,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _deadline = null;
+                                                    _isDirty = true;
+                                                  });
+                                                },
+                                              )
+                                              : null,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 18,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _deadline != null
+                                              ? DateFormat(
+                                                'MM/dd/yyyy',
+                                              ).format(_deadline!)
+                                              : 'Select deadline',
+                                          style: TextStyle(
+                                            color:
+                                                _deadline != null
+                                                    ? Theme.of(
+                                                      context,
+                                                    ).colorScheme.onSurface
+                                                    : Colors.grey.shade500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
                               ],
                             ),
                           ),
