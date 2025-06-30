@@ -39,8 +39,16 @@ class DeadlineNotificationService {
       // Initialize timezone
       debugPrint('[Notification] Initializing timezone...');
       tz.initializeTimeZones();
-      final String currentTimeZone = tz.local.name;
-      debugPrint('[Notification] Current timezone: $currentTimeZone');
+      try {
+        // Try to set the local timezone using the device's timeZoneName
+        final String deviceTimeZone = DateTime.now().timeZoneName;
+        tz.setLocalLocation(tz.getLocation(deviceTimeZone));
+        debugPrint('[Notification] Set timezone to: $deviceTimeZone');
+      } catch (e) {
+        debugPrint('[Notification] Failed to set timezone, defaulting to UTC');
+        tz.setLocalLocation(tz.getLocation('UTC'));
+      }
+      debugPrint('[Notification] tz.local: ${tz.local.name}');
 
       // Initialize settings
       debugPrint('[Notification] Setting up notification settings...');
