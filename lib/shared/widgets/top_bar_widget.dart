@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genprd/shared/config/routes/app_router.dart';
+import 'package:genprd/features/prd/views/notification_settings_screen.dart';
 
 class TopBarWidget extends StatelessWidget {
   final String title;
@@ -47,6 +48,17 @@ class TopBarWidget extends StatelessWidget {
       titleSpacing: 0,
       centerTitle: false,
       actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications),
+          tooltip: 'Notification Settings',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const NotificationSettingsScreen(),
+              ),
+            );
+          },
+        ),
         GestureDetector(
           onTap: () {
             AppRouter.navigateToUserProfile(context);

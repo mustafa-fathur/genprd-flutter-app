@@ -10,7 +10,6 @@ import 'package:genprd/features/user/views/user_profile_screen.dart';
 import 'package:genprd/shared/views/session_expired_screen.dart';
 import 'package:genprd/shared/views/splash_screen.dart';
 import 'package:genprd/shared/views/onboarding_screen.dart';
-import 'package:provider/provider.dart';
 import 'package:genprd/features/auth/controllers/auth_provider.dart';
 
 class AppRouter {

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:genprd/features/user/controllers/user_provider.dart';
 import 'package:genprd/shared/config/themes/app_theme.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:genprd/features/prd/views/notification_settings_screen.dart';
 
 enum NavigationItem { dashboard, allPrds, pinnedPrds, recentPrds }
 
@@ -132,6 +133,17 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            tooltip: 'Notification Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NotificationSettingsScreen(),
+                ),
+              );
+            },
+          ),
           InkWell(
             onTap: () {
               AppRouter.navigateToUserProfile(context);
@@ -147,7 +159,7 @@ class _MainLayoutState extends State<MainLayout> {
                     radius: 18,
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                     foregroundImage:
-                        hasAvatar ? NetworkImage(user!.avatarUrl!) : null,
+                        hasAvatar ? NetworkImage(user.avatarUrl!) : null,
                     child:
                         !hasAvatar
                             ? const Icon(

@@ -3,7 +3,6 @@ import 'package:genprd/features/auth/services/auth_service.dart';
 import 'package:genprd/features/user/models/user_model.dart';
 import '../models/auth_credentials.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:provider/provider.dart';
 
 enum AuthStatus {
   initial,

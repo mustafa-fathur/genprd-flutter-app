@@ -18,8 +18,8 @@ class PrdListScreen extends StatefulWidget {
 }
 
 class _PrdListScreenState extends State<PrdListScreen> {
-  String _searchQuery = '';
-  String _selectedFilter = 'All';
+  final String _searchQuery = '';
+  final String _selectedFilter = 'All';
   final List<String> _filters = [
     'All',
     'Draft',
@@ -50,7 +50,7 @@ class _PrdListScreenState extends State<PrdListScreen> {
 }
 
 class PrdListContent extends StatefulWidget {
-  const PrdListContent({Key? key}) : super(key: key);
+  const PrdListContent({super.key});
 
   @override
   _PrdListContentState createState() => _PrdListContentState();

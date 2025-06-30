@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:genprd/features/prd/services/prd_service.dart';
+import 'package:genprd/features/prd/services/deadline_notification_service.dart';
 
 enum PrdStatus { initial, loading, loaded, error }
 
@@ -35,17 +36,36 @@ class PrdController extends ChangeNotifier {
   Future<Map<String, dynamic>> createNewPrd(
     Map<String, dynamic> prdData,
   ) async {
+    print('[DEBUG] createNewPrd called');
     try {
-      // Call the API to create a new PRD
       final response = await _prdService.createPrd(prdData);
+      print('[DEBUG] PRD created, response: $response');
 
-      // Refresh the PRD lists
       await loadRecentPrds();
       await loadPinnedPrds();
 
+      if (response['deadline'] != null &&
+          response['product_name'] != null &&
+          response['id'] != null) {
+        try {
+          final deadlineDate = DateTime.parse(response['deadline']);
+          print('[DEBUG] About to schedule notification for $deadlineDate');
+          await DeadlineNotificationService().scheduleDeadlineNotification(
+            prdId: int.tryParse(response['id'].toString()) ?? 0,
+            deadline: deadlineDate,
+            prdName: response['product_name'],
+          );
+          print('[DEBUG] scheduleDeadlineNotification called');
+        } catch (e) {
+          print('[DEBUG] Failed to schedule deadline notification: $e');
+        }
+      } else {
+        print('[DEBUG] No deadline found in response, skipping notification.');
+      }
+
       return response;
     } catch (e) {
-      debugPrint('Error creating PRD: $e');
+      print('[DEBUG] Error creating PRD: $e');
       rethrow;
     }
   }

@@ -353,6 +353,7 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
 
         // Create PRD
         final result = await prdController.createNewPrd(prdData);
+        print('[DEBUG] PRD form got result: $result');
 
         if (result.containsKey('id')) {
           // Navigate to PRD detail screen using go_router
@@ -363,6 +364,8 @@ class _PrdFormScreenState extends State<PrdFormScreen> {
         } else {
           throw Exception('Failed to create PRD');
         }
+
+        print('Scheduling notification for $_deadline');
       } catch (e) {
         if (mounted) {
           setState(() {
@@ -1445,61 +1448,6 @@ class ProjectInformationStep extends StatelessWidget {
                   : 'Select deadline',
           onTap: () => onDeadlineChanged(),
         ),
-        const SizedBox(height: 12),
-        // Reminder toggle
-        Row(
-          children: [
-            Switch(
-              value: hasReminder,
-              onChanged: onReminderChanged,
-              activeColor: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Set reminder for deadline',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            ),
-          ],
-        ),
-        if (hasReminder) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  CupertinoIcons.bell,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'You will receive notifications 1 day before and at the deadline',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }
